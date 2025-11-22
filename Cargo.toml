@@ -1,0 +1,32 @@
+[package]
+name = "gpm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# PyO3 for Python bindings
+pyo3 = { version = "0.22", features = ["extension-module"] }
+
+# Import hardware implementations from gpm_original
+# After adding gpm_original as a submodule, uncomment this:
+# gpm_original = { path = "./gpm_original", features = ["python"] }
+
+# Temporary: Direct dependencies until submodule is set up
+# These should eventually come from gpm_original
+anyhow = "1.0"
+tokio = { version = "1.38.0", features = ["rt", "sync"] }
+raestro = { version = "0.5.0", optional = true }
+rppal = { version = "0.19.0", optional = true }
+spidev = { version = "0.7.0", optional = true }
+log = "0.4"
+chrono = "0.4.41"
+biquad = "0.5.0"
+rand = "0.9.2"
+
+[features]
+# Hardware features passed through to gpm_original
+pi = ["dep:raestro", "dep:rppal", "dep:spidev"]
+
+[lib]
+name = "gpm"
+crate-type = ["cdylib"]

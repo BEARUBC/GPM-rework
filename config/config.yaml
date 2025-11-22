@@ -1,0 +1,77 @@
+# GPM Configuration
+
+# Hardware Configuration
+hardware:
+  # EMG Sensor Configuration
+  emg:
+    buffer_size: 256
+    cs_pin: 8
+    clock_speed: 1350000
+    inner_threshold: 450.0
+    outer_threshold: 450.0
+    sample_rate: 1000  # Hz
+    
+  # FSR Sensor Configuration
+  fsr:
+    cs_pins: [7]
+    at_rest_threshold: 900
+    pressure_threshold: 500
+    clock_speed: 1350000
+    num_channels: 8
+    
+  # Maestro Servo Controller
+  maestro:
+    baudrate: 115200
+    num_channels: 6
+    
+  # BMS Configuration
+  bms:
+    update_interval: 1.0  # seconds
+    
+# Grip Positions (PWM values for each servo)
+grip_positions:
+  rest:
+    - 1500  # Channel 0
+    - 1500  # Channel 1
+    - 1500  # Channel 2
+    - 1500  # Channel 3
+    - 1500  # Channel 4
+    - 1500  # Channel 5
+    
+  pinch:
+    - 2000
+    - 1800
+    - 1500
+    - 1500
+    - 1500
+    - 1500
+    
+  power:
+    - 2200
+    - 2200
+    - 2200
+    - 2000
+    - 2000
+    - 2000
+    
+  open:
+    - 1000
+    - 1000
+    - 1000
+    - 1000
+    - 1000
+    - 1000
+
+# Safety Constraints
+safety:
+  critical_voltage: 7.0  # Volts
+  max_temperature: 60.0  # Celsius
+  max_current: 10.0  # Amps
+  min_charge_percentage: 10.0
+
+# Application Settings
+application:
+  control_loop_rate: 100  # Hz
+  gesture_hold_time: 5  # samples
+  debug_mode: false
+  log_level: "INFO"
