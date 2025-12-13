@@ -22,20 +22,24 @@ mod hardware;
 // Python bindings layer - wraps hardware implementations
 mod python_bindings;
 
-use python_bindings::{bms, emg, fsr, maestro};
+use python_bindings::{bms, emg, fsr, maestro, manager};
 
 /// Grasp Primary Module - Hardware interface
-/// 
+///
 /// This module provides Python bindings to the Rust hardware drivers.
 /// The actual hardware implementations come from the gpm_original crate.
 #[pymodule]
 fn gpm(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    // Hardware resource bindings
     m.add_class::<maestro::Maestro>()?;
     m.add_class::<emg::Emg>()?;
     m.add_class::<bms::Bms>()?;
     m.add_class::<bms::BmsStatus>()?;
     m.add_class::<fsr::Fsr>()?;
     m.add_class::<fsr::FsrReading>()?;
+
+    // Manager pattern (future integration)
+    m.add_class::<manager::ResourceManager>()?;
 
     Ok(())
 }

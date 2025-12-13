@@ -45,6 +45,8 @@ Thumbs.db
 .coverage
 htmlcov/
 *.cover
+/gpm_original/
+UBC Bionics Embedded GPM Rework Doc.txt 
 
 # Logs
 *.log

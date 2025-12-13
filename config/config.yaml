@@ -69,9 +69,21 @@ safety:
   max_current: 10.0  # Amps
   min_charge_percentage: 10.0
 
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: "/var/log/gpm/gpm.log"  # Set to null to disable file logging
+  console: true  # Log to console
+
+# Telemetry Configuration (Prometheus)
+telemetry:
+  enabled: true
+  port: 8080
+  metrics_prefix: "gpm"
+
 # Application Settings
 application:
   control_loop_rate: 100  # Hz
   gesture_hold_time: 5  # samples
   debug_mode: false
-  log_level: "INFO"
+  emg_sample_rate_hz: 1000

@@ -1,280 +1,238 @@
-# Git Submodule Integration Guide
+# gpm_original Submodule Integration Guide
 
-This guide explains how to integrate `gpm_original` as a git submodule to share hardware code.
+## Current State
+- Temporary local hardware in `src/hardware/` (to be removed)
+- Python bindings in `src/python_bindings/` (will stay)
+- Python application in `application/` (will stay)
 
-## Current Status
+## Integration Steps (for Rust team)
 
-✅ **Python bindings are ready** - All PyO3 wrapper code in `src/python_bindings/` is prepared
-✅ **Python application layer complete** - All control logic in `application/` directory
-⏳ **Awaiting submodule setup** - Currently using local `src/hardware/` as temporary implementation
-
-## Prerequisites
-
-The team working on `gpm_original` needs to:
-
-1. ✅ Add PyO3 feature flag to their `Cargo.toml`
-2. ✅ Make resources module publicly accessible
-3. ✅ Ensure `Resource` trait is exported
-4. ✅ Add Python bindings feature (optional, can be in this repo)
-
-## Step 1: Add gpm_original as Submodule
-
-From the `GPM-rework` directory:
+### 1. Add gpm_original as submodule
 
 ```bash
-# Add gpm_original as a submodule
-git submodule add <gpm_original_repo_url> gpm_original
-
-# Initialize and update
-git submodule init
-git submodule update
-
-# Commit the submodule addition
-git add .gitmodules gpm_original
-git commit -m "Add gpm_original as submodule"
-```
-
-## Step 2: Update Cargo.toml
-
-Uncomment the gpm_original dependency:
-
-```toml
-[dependencies]
-pyo3 = { version = "0.22", features = ["extension-module"] }
-
-# Uncomment this line:
-gpm_original = { path = "./gpm_original" }
-
-# Remove or comment out temporary dependencies:
-# anyhow = "1.0"
-# tokio = { version = "1.38.0", features = ["rt", "sync"] }
-# raestro = { version = "0.5.0", optional = true }
-# ... etc (these will come from gpm_original)
-```
-
-## Step 3: Update Python Bindings
-
-In each file in `src/python_bindings/`, replace the TODO comments:
-
-### maestro.rs
-```rust
-// Change from:
-use crate::hardware::maestro::Maestro as RustMaestro;
-use crate::hardware::Resource;
-
-// To:
-use gpm_original::resources::Maestro as RustMaestro;
-use gpm_original::resources::Resource;
-```
-
-### emg.rs
-```rust
-// Change from:
-use crate::hardware::emg::Emg as RustEmg;
-use crate::hardware::Resource;
-
-// To:
-use gpm_original::resources::Emg as RustEmg;
-use gpm_original::resources::Resource;
-```
-
-### fsr.rs
-```rust
-// Change from:
-use crate::hardware::fsr::{Fsr as RustFsr, FsrReading as RustFsrReading};
-use crate::hardware::Resource;
-
-// To:
-use gpm_original::resources::fsr::{Fsr as RustFsr, FsrReading as RustFsrReading};
-use gpm_original::resources::Resource;
-```
-
-### bms.rs
-```rust
-// Change from:
-use crate::hardware::bms::{Bms as RustBms, BmsStatus as RustBmsStatus};
-use crate::hardware::Resource;
-
-// To:
-use gpm_original::resources::bms::{Bms as RustBms, BmsStatus as RustBmsStatus};
-use gpm_original::resources::Resource;
-```
-
-## Step 4: Update lib.rs
-
-Add the external crate reference:
-
-```rust
-use pyo3::prelude::*;
-
-// Add this to import from submodule:
-mod hardware {
-    pub use gpm_original::resources::*;
-}
-
-mod python_bindings;
-// ... rest of file
-```
-
-Or simpler - just remove the local hardware module completely and reference gpm_original directly in the bindings.
-
-## Step 5: Remove Local Hardware Directory
-
-Once the submodule is integrated and working:
-
-```bash
-# Remove the temporary hardware implementation
-rm -rf src/hardware/
-
-# Commit the change
-git add src/
-git commit -m "Remove local hardware implementations, now using gpm_original"
-```
-
-## Step 6: Update .gitignore
-
-Add submodule-related ignores if needed:
-
-```gitignore
-# In .gitignore
-gpm_original/target/
-```
-
-## Step 7: Test the Build
-
-```bash
-# Clean build to ensure everything works
-cargo clean
-
-# Build Python extension
-maturin develop
-
-# Test it works
-python -c "from gpm import Maestro; print('Success!')"
-
-# Run demo
-python main.py demo
-```
-
-## Working with Submodules
-
-### Updating gpm_original
-
-```bash
-# Update to latest commit
-cd gpm_original
-git pull origin main
-cd ..
-git add gpm_original
-git commit -m "Update gpm_original submodule"
-```
-
-### Cloning GPM-rework with Submodules
-
-New users need to clone with submodules:
-
-```bash
-# Clone with submodules
-git clone --recursive <gpm-rework-repo-url>
-
-# Or if already cloned:
+git submodule add <repo-url> gpm_original
 git submodule update --init --recursive
 ```
 
-### Feature Flags
+### 2. Uncomment Cargo.toml dependency
 
-Pass features through to gpm_original:
-
-```toml
-[features]
-pi = ["gpm_original/pi"]  # Pass pi feature to submodule
-```
-
-## Requirements for gpm_original Team
-
-For this integration to work, `gpm_original` needs:
-
-### 1. Public Module Exports
-
-In `gpm_original/src/lib.rs`:
-
-```rust
-// Make resources publicly accessible
-pub mod resources;
-
-// Or re-export what's needed:
-pub use resources::{
-    Maestro, Emg, Fsr, Bms, BmsStatus, FsrReading,
-    Resource  // The trait
-};
-```
-
-### 2. Feature Flag (Optional)
-
-In `gpm_original/Cargo.toml`:
+Edit `Cargo.toml` line 12:
 
 ```toml
-[features]
-# For standalone binary
-standalone = ["hyper", "prost", "prometheus-client"]
+# Before:
+# gpm_original = { path = "./gpm_original", features = ["python"] }
 
-# For Python extension use (minimal deps)
-python = []
-
-# Hardware support
-pi = ["raestro", "rppal", "spidev"]
-
-# Default for backward compatibility
-default = ["standalone"]
+# After:
+gpm_original = { path = "./gpm_original", features = ["python"] }
 ```
 
-### 3. Conditional Compilation
+### 3. Update src/lib.rs
 
-Only if they want to keep both binary and library builds:
+Edit `src/lib.rs` line 20:
 
 ```rust
-// Keep managers/dispatchers only for standalone
-#[cfg(feature = "standalone")]
-pub mod managers;
+// Before:
+mod hardware;
 
-#[cfg(feature = "standalone")]
-pub mod dispatchers;
-
-// Resources always available
-pub mod resources;
+// After:
+// (remove line entirely, use gpm_original instead)
 ```
+
+### 4. Update python_bindings imports
+
+Each file in `src/python_bindings/` has TODO comments marking what needs to change.
+
+**Example** (`src/python_bindings/maestro.rs`):
+
+```rust
+// Before:
+use crate::hardware::maestro::Maestro as RustMaestro;
+use crate::hardware::Resource;
+
+// After:
+use gpm_original::resources::maestro::Maestro as RustMaestro;
+use gpm_original::resources::Resource;
+```
+
+Apply similar changes to:
+- `src/python_bindings/emg.rs`
+- `src/python_bindings/fsr.rs`
+- `src/python_bindings/bms.rs`
+
+### 5. Remove src/hardware/ directory
+
+```bash
+git rm -r src/hardware/
+git commit -m "Remove temporary hardware implementations - now using gpm_original"
+```
+
+### 6. Build and verify
+
+```bash
+# Build the Python extension
+maturin develop
+
+# Test that imports work
+python -c "import gpm; print('Success!')"
+
+# Test instantiation
+python -c "from gpm import Maestro, Emg, Bms, Fsr; m = Maestro(); print('Hardware interfaces loaded')"
+```
+
+---
+
+## Required Exports from gpm_original
+
+The gpm_original submodule must expose the following modules and types for Python bindings to work:
+
+### Resource Modules
+
+```rust
+// gpm_original/src/lib.rs or equivalent
+pub mod resources {
+    pub mod maestro;
+    pub mod emg;
+    pub mod fsr;
+    pub mod bms;
+}
+```
+
+### Resource Trait
+
+```rust
+pub trait Resource {
+    fn init() -> Self;
+    fn name() -> String;
+}
+```
+
+### Hardware Implementations
+
+Each resource must implement specific methods that match the current temporary implementations:
+
+#### Maestro
+```rust
+impl Maestro {
+    fn set_target(&mut self, channel: u8, pwm_value: u16) -> anyhow::Result<()>;
+    fn move_to_grip(&mut self, grip_type: &str) -> anyhow::Result<()>;
+    fn current_pwm(&self, channel: u8) -> anyhow::Result<u16>;
+}
+```
+
+#### EMG
+```rust
+impl Emg {
+    fn configure(&mut self, buffer_size: usize);
+    fn is_ready(&self) -> bool;
+    fn read_buffer(&mut self) -> Vec<u16>;
+    fn calibrate(&mut self, inner_threshold: f32, outer_threshold: f32);
+    fn process_data(&mut self) -> String; // Returns "open", "close", or "idle"
+}
+```
+
+#### FSR
+```rust
+impl Fsr {
+    fn configure(&mut self, cs_pins: Vec<u8>, at_rest_threshold: u16, pressure_threshold: u16);
+    fn read_all(&mut self) -> FsrReading;
+    fn process_data(&mut self) -> bool; // Returns vibrate state
+}
+
+pub struct FsrReading {
+    pub channels: Vec<u16>,
+    pub pressure_detected: bool,
+}
+```
+
+#### BMS
+```rust
+impl Bms {
+    fn get_status(&self) -> BmsStatus;
+    fn update(&mut self);
+}
+
+pub struct BmsStatus {
+    pub voltage: f32,
+    pub current: f32,
+    pub temperature: f32,
+    pub is_healthy: bool,
+    pub charge_percentage: f32,
+}
+```
+
+---
+
+## Manager Pattern Integration (Future)
+
+Once gpm_original provides manager-based communication, add:
+
+```rust
+// gpm_original should export:
+pub mod managers {
+    pub use Manager;
+    pub use ManagerChannelData;
+    pub use ManagerChannelMap;
+}
+```
+
+The Python team will then implement bindings in `src/python_bindings/manager.rs` to expose MPSC channel communication to Python.
+
+See `docs/MANAGER_PATTERN.md` for architectural details.
+
+---
 
 ## Troubleshooting
 
-### Issue: "cannot find crate `gpm_original`"
-**Solution:** Make sure you ran `git submodule update --init`
+### Build fails with "unresolved import"
 
-### Issue: "unresolved import `gpm_original::resources`"
-**Solution:** Check that `gpm_original/src/lib.rs` has `pub mod resources;`
+**Problem**: Python bindings still reference `crate::hardware`
 
-### Issue: Build fails with missing dependencies
-**Solution:** Make sure feature flags are passed correctly in Cargo.toml
+**Solution**: Search for all occurrences of `crate::hardware` and replace with `gpm_original::resources`
 
-### Issue: Submodule shows modified but no changes
-**Solution:** This is normal if gpm_original team is actively developing. Update with `git submodule update --remote`
-
-## Benefits of This Approach
-
-✅ **Single source of truth** - Hardware code only in gpm_original
-✅ **Easy updates** - Bug fixes automatically available
-✅ **Clear separation** - GPM-rework is purely Python bindings + application logic
-✅ **Version control** - Can pin to specific gpm_original commit
-✅ **Parallel development** - Teams can work independently
-
-## Alternative: Workspace Approach
-
-If submodules are problematic, consider a Cargo workspace:
-
-```toml
-# Create workspace Cargo.toml at root
-[workspace]
-members = ["gpm_original", "gpm_python"]
-resolver = "2"
+```bash
+grep -r "crate::hardware" src/python_bindings/
+# Update each file found
 ```
 
-Both approaches work - submodule is simpler for separate repos, workspace is better for monorepo.
+### Python import fails
+
+**Problem**: gpm_original doesn't export required types
+
+**Solution**: Verify gpm_original's `lib.rs` has public exports:
+
+```rust
+// gpm_original/src/lib.rs
+pub mod resources;
+pub use resources::Resource;
+```
+
+### Hardware initialization fails
+
+**Problem**: Method signatures don't match between temp implementations and gpm_original
+
+**Solution**: Check that gpm_original methods match the expected signatures listed in "Required Exports" section above. Update Python bindings if signatures have changed.
+
+---
+
+## Testing Checklist
+
+After integration, verify:
+
+- [ ] `maturin develop` builds without errors
+- [ ] `python -c "import gpm"` succeeds
+- [ ] Can instantiate all hardware classes: `Maestro()`, `Emg()`, `Fsr()`, `Bms()`
+- [ ] Mock mode works (build without `--features pi`)
+- [ ] Pi mode builds (build with `--features pi` on Pi Zero)
+- [ ] Python tests pass: `pytest tests/` (using mock fixtures)
+- [ ] Application runs without errors: `python main.py`
+
+---
+
+## Contact
+
+For questions or issues during integration:
+- **Python team**: Focus on ensuring bindings work with new imports
+- **Rust team**: Focus on completing gpm_original with required exports
+- **Integration issues**: Check this guide and verify method signatures match
+
+Last updated: 2025-12-12
