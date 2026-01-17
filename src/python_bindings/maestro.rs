@@ -5,8 +5,8 @@ use pyo3::prelude::*;
 // use gpm_original::resources::Resource;
 
 // Temporary: using local hardware module
-use crate::hardware::maestro::Maestro as RustMaestro;
-use crate::hardware::Resource;
+use gpm_original::resources::maestro::Maestro as RustMaestro;
+use gpm_original::resources::Resource;
 
 /// Python-exposed Maestro servo controller
 #[pyclass(name = "Maestro")]
