@@ -68,7 +68,7 @@ impl Fsr {
             py.allow_threads(|| {
                 self.inner
                     .read_all()
-                    .map(|readings| readings.into_iter().map(|r| r.into()).collect())
+                    .map(|readings: Vec<_>| readings.into_iter().map(Into::into).collect::<Vec<_>>())
                     .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("FSR read error: {}", e)))
             })
         })

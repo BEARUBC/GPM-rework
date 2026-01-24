@@ -16,11 +16,16 @@ use pyo3::prelude::*;
 
 // Temporary: local hardware module (will be replaced by gpm_original)
 // TODO: Once gpm_original is integrated, remove this and update bindings to:
-//       use gpm_original::resources::*;
-mod hardware;
+// use gpm_original::resources::*;
 
 // Python bindings layer - wraps hardware implementations
 mod python_bindings;
+
+pub mod resources;
+pub mod managers;
+pub mod dispatchers;
+pub mod exporters;
+
 
 use python_bindings::{bms, emg, fsr, maestro};
 
