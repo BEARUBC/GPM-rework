@@ -1,12 +1,12 @@
+use super::{adc::Adc, Resource};
 use anyhow::Result;
-use super::{Resource, adc::Adc};
 
 pub struct Fsr {
     pub at_rest_threshold: u16,
     pub pressure_threshold: u16,
     pub clock_speed: u32,
     pub num_fsrs: usize,
-    pub cs_pins: Vec<u8>,
+    pub cs_pins: [u8; 3],
     pub num_channels: u8,
 }
 
@@ -25,7 +25,7 @@ impl Resource for Fsr {
             pressure_threshold: 500,
             clock_speed: 1350000,
             num_fsrs: 1,
-            cs_pins: vec![7], // Example CS pin
+            cs_pins: [7, 8, 9], // Example CS pins
             num_channels: 8,
         }
     }
@@ -36,7 +36,7 @@ impl Resource for Fsr {
 }
 
 impl Fsr {
-    pub fn configure(&mut self, cs_pins: Vec<u8>, at_rest: u16, pressure: u16) {
+    pub fn configure(&mut self, cs_pins: [u8; 3], at_rest: u16, pressure: u16) {
         self.cs_pins = cs_pins;
         self.num_fsrs = cs_pins.len();
         self.at_rest_threshold = at_rest;
@@ -48,11 +48,11 @@ impl Fsr {
 
         for (fsr_id, &cs_pin) in self.cs_pins.iter().enumerate() {
             let mut adc = Adc::init(cs_pin, self.clock_speed);
-            
+
             for channel in 0..self.num_channels {
                 let value = adc.read_channel(channel)?;
                 let pressure_detected = value < self.at_rest_threshold;
-                
+
                 readings.push(FsrReading {
                     fsr_id,
                     channel,
@@ -67,7 +67,7 @@ impl Fsr {
 
     pub fn process_data(&mut self) -> Result<bool> {
         let readings = self.read_all()?;
-        
+
         // Return true if any sensor detects pressure
         Ok(readings.iter().any(|r| r.pressure_detected))
     }

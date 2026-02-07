@@ -54,8 +54,14 @@ impl Fsr {
     ///     cs_pins: List of CS pin numbers
     ///     at_rest_threshold: ADC value threshold for at-rest state
     ///     pressure_threshold: ADC value threshold for pressure detection
-    pub fn configure(&mut self, cs_pins: Vec<u8>, at_rest_threshold: u16, pressure_threshold: u16) -> PyResult<()> {
-        self.inner.configure(cs_pins, at_rest_threshold, pressure_threshold);
+    pub fn configure(
+        &mut self,
+        cs_pins: [u8; 3],
+        at_rest_threshold: u16,
+        pressure_threshold: u16,
+    ) -> PyResult<()> {
+        self.inner
+            .configure(cs_pins, at_rest_threshold, pressure_threshold);
         Ok(())
     }
 
@@ -69,7 +75,12 @@ impl Fsr {
                 self.inner
                     .read_all()
                     .map(|readings| readings.into_iter().map(|r| r.into()).collect())
-                    .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("FSR read error: {}", e)))
+                    .map_err(|e| {
+                        PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                            "FSR read error: {}",
+                            e
+                        ))
+                    })
             })
         })
     }
@@ -81,9 +92,12 @@ impl Fsr {
     pub fn process_data(&mut self) -> PyResult<bool> {
         Python::with_gil(|py| {
             py.allow_threads(|| {
-                self.inner
-                    .process_data()
-                    .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("FSR process error: {}", e)))
+                self.inner.process_data().map_err(|e| {
+                    PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                        "FSR process error: {}",
+                        e
+                    ))
+                })
             })
         })
     }

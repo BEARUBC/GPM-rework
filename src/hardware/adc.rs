@@ -70,7 +70,7 @@ impl Adc {
             )));
         }
         use rand::Rng;
-        Ok(rand::thread_rng().gen_range(400..600))
+        Ok(rand::rng().random_range(400..600))
     }
 
     pub fn read_channels(&mut self, channels: &[u8]) -> Result<Vec<u16>> {

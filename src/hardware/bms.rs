@@ -48,10 +48,10 @@ impl Bms {
         #[cfg(not(feature = "pi"))]
         {
             use rand::Rng;
-            let mut rng = rand::thread_rng();
-            self.voltage = 11.5 + rng.gen::<f32>() * 1.0; // 11.5-12.5V
-            self.current = rng.gen::<f32>() * 2.0; // 0-2A
-            self.temperature = 20.0 + rng.gen::<f32>() * 10.0; // 20-30°C
+            let mut rng = rand::rng();
+            self.voltage = 11.5 + rng.random::<f32>() * 1.0; // 11.5-12.5V
+            self.current = rng.random::<f32>() * 2.0; // 0-2A
+            self.temperature = 20.0 + rng.random::<f32>() * 10.0; // 20-30°C
             self.is_healthy = self.voltage > 10.0 && self.temperature < 50.0;
         }
     }
@@ -60,7 +60,7 @@ impl Bms {
         // Simple linear approximation: 10V = 0%, 12.6V = 100%
         let min_voltage = 10.0;
         let max_voltage = 12.6;
-        
+
         ((self.voltage - min_voltage) / (max_voltage - min_voltage) * 100.0)
             .max(0.0)
             .min(100.0)
