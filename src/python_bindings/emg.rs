@@ -39,9 +39,12 @@ impl Emg {
     pub fn read_buffer(&mut self) -> PyResult<Vec<u16>> {
         Python::with_gil(|py| {
             py.allow_threads(|| {
-                self.inner
-                    .read_buffer()
-                    .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("EMG read error: {}", e)))
+                self.inner.read_buffer().map_err(|e| {
+                    PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                        "EMG read error: {}",
+                        e
+                    ))
+                })
             })
         })
     }
@@ -80,8 +83,8 @@ impl Emg {
     /// Returns:
     ///     -1 (hold), 0 (close), or 1 (open)
     pub fn process_data(&self, values: Vec<f32>) -> PyResult<i32> {
-        self.inner
-            .process_data(&values)
-            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Process error: {}", e)))
+        self.inner.process_data(&values).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Process error: {}", e))
+        })
     }
 }

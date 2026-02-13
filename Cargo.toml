@@ -1,5 +1,5 @@
 [package]
-name = "gpm"
+name = "gpm_rework"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,7 +9,7 @@ pyo3 = { version = "0.22", features = ["extension-module"] }
 
 # Import hardware implementations from gpm_original
 # After adding gpm_original as a submodule, uncomment this:
-# gpm_original = { path = "./gpm_original", features = ["python"] }
+gpm_original = { path = "./gpm_original", package = "gpm" }
 
 # Temporary: Direct dependencies until submodule is set up
 # These should eventually come from gpm_original
