@@ -1,6 +1,6 @@
 use super::{adc::Adc, Resource};
-use anyhow::Result;
 use crate::hal::traits::{AdcDriver, EmgDriver};
+use anyhow::Result;
 
 pub struct Emg {
     pub adc: Adc,
@@ -108,4 +108,19 @@ impl EmgDriver for Emg {
     fn process_data(&self, values: &[f32]) -> Result<i32> {
         Emg::process_data(self, values)
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TODO: Buffer size configuration
+
+    // TODO: Threshold calibration
+
+    // TODO: Process data classification (open/close/hold)
+
+    // TODO: Invalid input handling (not 2 values)
+
+    // TODO: Channel reading alternation
 }

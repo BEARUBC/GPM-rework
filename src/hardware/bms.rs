@@ -77,3 +77,14 @@ impl BmsDriver for Bms {
         Bms::update(self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TODO: Charge percentage calculation (edge cases: 10V, 12.6V, out of range)
+
+    // TODO: Health status logic
+
+    // TODO: Status struct population
+}

@@ -1,6 +1,6 @@
 use super::{adc::Adc, Resource};
-use anyhow::Result;
 use crate::hal::traits::{AdcDriver, FsrDriver};
+use anyhow::Result;
 
 pub struct Fsr {
     pub at_rest_threshold: u16,
@@ -82,4 +82,17 @@ impl FsrDriver for Fsr {
     fn process_data(&mut self) -> Result<bool> {
         Fsr::process_data(self)
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TODO: Threshold detection logic
+
+    // TODO: Multiple sensor reading
+
+    // TODO: Pressure detection across all channels
+
+    // TODO: CS pin configuration
 }
