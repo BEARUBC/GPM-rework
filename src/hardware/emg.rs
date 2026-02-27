@@ -1,5 +1,5 @@
+use super::{adc::Adc, Resource};
 use anyhow::Result;
-use super::{Resource, adc::Adc};
 
 pub struct Emg {
     pub adc: Adc,
@@ -37,22 +37,23 @@ impl Emg {
     }
 
     pub fn read_buffer(&mut self) -> Result<Vec<u16>> {
-        let mut samples = Vec::new();
-        
+        self.buffer.clear();
+        self.buffer
+            .reserve(self.buffer_size.saturating_sub(self.buffer.capacity()));
+
         // Read from both channels alternately
         for _ in 0..self.buffer_size / 2 {
             let ch0 = self.adc.read_channel(0)?;
             let ch1 = self.adc.read_channel(1)?;
-            
+
             self.current_channel_0 = ch0 as f32;
             self.current_channel_1 = ch1 as f32;
-            
-            samples.push(ch0);
-            samples.push(ch1);
+
+            self.buffer.push(ch0);
+            self.buffer.push(ch1);
         }
-        
-        self.buffer = samples.clone();
-        Ok(samples)
+
+        Ok(self.buffer.clone())
     }
 
     pub fn is_ready(&self) -> bool {
@@ -60,6 +61,7 @@ impl Emg {
     }
 
     pub fn get_latest_samples(&self) -> Vec<u16> {
+        // Clone required: caller (PyO3) needs owned data to convert to a Python list.
         self.buffer.clone()
     }
 
