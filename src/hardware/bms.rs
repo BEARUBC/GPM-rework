@@ -1,4 +1,5 @@
 use super::Resource;
+use crate::hal::traits::BmsDriver;
 
 pub struct Bms {
     pub voltage: f32,
@@ -64,5 +65,15 @@ impl Bms {
         ((self.voltage - min_voltage) / (max_voltage - min_voltage) * 100.0)
             .max(0.0)
             .min(100.0)
+    }
+}
+
+impl BmsDriver for Bms {
+    fn get_status(&self) -> BmsStatus {
+        Bms::get_status(self)
+    }
+
+    fn update(&mut self) {
+        Bms::update(self)
     }
 }

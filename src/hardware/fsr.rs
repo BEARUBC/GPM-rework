@@ -1,5 +1,6 @@
 use super::{adc::Adc, Resource};
 use anyhow::Result;
+use crate::hal::traits::{AdcDriver, FsrDriver};
 
 pub struct Fsr {
     pub at_rest_threshold: u16,
@@ -70,5 +71,15 @@ impl Fsr {
 
         // Return true if any sensor detects pressure
         Ok(readings.iter().any(|r| r.pressure_detected))
+    }
+}
+
+impl FsrDriver for Fsr {
+    fn read_all(&mut self) -> Result<Vec<FsrReading>> {
+        Fsr::read_all(self)
+    }
+
+    fn process_data(&mut self) -> Result<bool> {
+        Fsr::process_data(self)
     }
 }

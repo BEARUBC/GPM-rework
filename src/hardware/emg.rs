@@ -1,5 +1,6 @@
 use super::{adc::Adc, Resource};
 use anyhow::Result;
+use crate::hal::traits::{AdcDriver, EmgDriver};
 
 pub struct Emg {
     pub adc: Adc,
@@ -84,5 +85,27 @@ impl Emg {
         } else {
             Ok(-1) // Hold/No change
         }
+    }
+}
+
+impl EmgDriver for Emg {
+    fn read_buffer(&mut self) -> Result<Vec<u16>> {
+        Emg::read_buffer(self)
+    }
+
+    fn is_ready(&self) -> bool {
+        Emg::is_ready(self)
+    }
+
+    fn get_latest_samples(&self) -> Vec<u16> {
+        Emg::get_latest_samples(self)
+    }
+
+    fn calibrate(&mut self, inner_threshold: f32, outer_threshold: f32) {
+        Emg::calibrate(self, inner_threshold, outer_threshold)
+    }
+
+    fn process_data(&self, values: &[f32]) -> Result<i32> {
+        Emg::process_data(self, values)
     }
 }

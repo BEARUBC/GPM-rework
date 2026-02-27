@@ -1,4 +1,5 @@
 // ADC (MCP3008) interface for reading analog sensors
+use crate::hal::traits::AdcDriver;
 use anyhow::{Context, Error, Result};
 
 #[cfg(feature = "pi")]
@@ -37,8 +38,20 @@ impl Adc {
         Adc { _phantom: () }
     }
 
+    pub fn read_channels(&mut self, channels: &[u8]) -> Result<Vec<u16>> {
+        channels
+            .iter()
+            .map(|&channel| {
+                self.read_channel(channel)
+                    .with_context(|| format!("Failed to read from ADC channel {}", channel))
+            })
+            .collect()
+    }
+}
+
+impl AdcDriver for Adc {
     #[cfg(feature = "pi")]
-    pub fn read_channel(&mut self, channel: u8) -> Result<u16> {
+    fn read_channel(&mut self, channel: u8) -> Result<u16> {
         if channel > 7 {
             return Err(Error::msg(format!(
                 "Invalid ADC channel: {}. Must be between 0 and 7.",
@@ -62,7 +75,7 @@ impl Adc {
     }
 
     #[cfg(not(feature = "pi"))]
-    pub fn read_channel(&mut self, channel: u8) -> Result<u16> {
+    fn read_channel(&mut self, channel: u8) -> Result<u16> {
         if channel > 7 {
             return Err(Error::msg(format!(
                 "Invalid ADC channel: {}. Must be between 0 and 7.",
@@ -71,15 +84,5 @@ impl Adc {
         }
         use rand::Rng;
         Ok(rand::rng().random_range(400..600))
-    }
-
-    pub fn read_channels(&mut self, channels: &[u8]) -> Result<Vec<u16>> {
-        channels
-            .iter()
-            .map(|&channel| {
-                self.read_channel(channel)
-                    .with_context(|| format!("Failed to read from ADC channel {}", channel))
-            })
-            .collect()
     }
 }

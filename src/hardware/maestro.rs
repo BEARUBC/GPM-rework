@@ -1,5 +1,6 @@
 use anyhow::Result;
 use super::Resource;
+use crate::hal::traits::MaestroDriver;
 
 #[cfg(feature = "pi")]
 use raestro::maestro::{
@@ -113,5 +114,19 @@ impl Maestro {
             _ => return Err(anyhow::anyhow!("Unknown grip type: {}", grip_type)),
         }
         Ok(())
+    }
+}
+
+impl MaestroDriver for Maestro {
+    fn set_target(&mut self, channel: u8, pwm_value: u16) -> Result<()> {
+        Maestro::set_target(self, channel, pwm_value)
+    }
+
+    fn current_pwm(&self, channel: u8) -> Result<u16> {
+        Maestro::current_pwm(self, channel)
+    }
+
+    fn move_to_grip(&mut self, grip_type: &str) -> Result<()> {
+        Maestro::move_to_grip(self, grip_type)
     }
 }

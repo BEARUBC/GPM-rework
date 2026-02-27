@@ -18,6 +18,7 @@ use pyo3::prelude::*;
 // TODO: Once gpm_original is integrated, remove this and update bindings to:
 //       use gpm_original::resources::*;
 mod hardware;
+mod hal;
 
 // Python bindings layer - wraps hardware implementations
 mod python_bindings;
