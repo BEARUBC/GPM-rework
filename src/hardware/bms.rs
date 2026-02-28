@@ -82,9 +82,55 @@ impl BmsDriver for Bms {
 mod tests {
     use super::*;
 
-    // TODO: Charge percentage calculation (edge cases: 10V, 12.6V, out of range)
+    #[test]
+    fn test_charge_percentage_calculation() {
+        let mut bms = Bms::init();
+        bms.voltage = 10.0;
+        assert_eq!(bms.calculate_charge_percentage(), 0.0);
 
-    // TODO: Health status logic
+        bms.voltage = 12.6;
+        assert_eq!(bms.calculate_charge_percentage(), 100.0);
 
-    // TODO: Status struct population
+        bms.voltage = 11.3;
+        assert_eq!(bms.calculate_charge_percentage(), 50.0);
+    }
+
+    #[test]
+    fn test_charge_calculation_out_of_range() {
+        let mut bms = Bms::init();
+        bms.voltage = 9.9;
+        assert_eq!(bms.calculate_charge_percentage(), 0.0);
+
+        bms.voltage = 12.7;
+        assert_eq!(bms.calculate_charge_percentage(), 100.0);
+    }
+
+    #[test]
+    fn test_health_status_logic() {
+        let mut bms = Bms::init();
+        bms.voltage = 11.0;
+        bms.temperature = 20.0;
+        assert!(bms.is_healthy);
+
+        bms.voltage = 10.0;
+        assert!(!bms.is_healthy);
+
+        bms.voltage = 10.0;
+        bms.temperature = 50.0;
+        assert!(!bms.is_healthy);
+        // TODO: this one fails b/c update isn't properly implemented
+    }
+
+    #[test]
+    fn test_status_struct_population() {
+        let mut bms = Bms::init();
+        bms.voltage = 10.0;
+        bms.temperature = 20.0;
+        bms.is_healthy = true;
+
+        let status = bms.get_status();
+        assert_eq!(status.voltage, 10.0);
+        assert_eq!(status.temperature, 20.0);
+        assert!(status.is_healthy);
+    }
 }
