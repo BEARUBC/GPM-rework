@@ -114,13 +114,49 @@ impl EmgDriver for Emg {
 mod tests {
     use super::*;
 
-    // TODO: Buffer size configuration
+    #[test]
+    fn test_buffer_size_configuration() {
+        let mut emg = Emg::init();
+        emg.buffer_size = 10;
+        assert_eq!(emg.buffer_size, 10);
 
-    // TODO: Threshold calibration
+        emg.buffer_size = 20;
+        assert_eq!(emg.buffer_size, 20);
+    }
 
-    // TODO: Process data classification (open/close/hold)
+    #[test]
+    fn test_threshold_calibration() {
+        let mut emg = Emg::init();
+        emg.calibrate(0.5, 1.5);
+        assert_eq!(emg.inner_threshold, 0.5);
+        assert_eq!(emg.outer_threshold, 1.5);
+    }
 
-    // TODO: Invalid input handling (not 2 values)
+    #[test]
+    fn test_process_data_classification() {
+        let mut emg = Emg::init();
+        emg.calibrate(0.5, 1.5);
+        assert_eq!(emg.process_data(&[0.6, 1.4]).unwrap(), 1); // Open
+        assert_eq!(emg.process_data(&[0.4, 1.6]).unwrap(), 0); // Close
+        assert_eq!(emg.process_data(&[0.5, 1.5]).unwrap(), -1); // Hold/No change
+    }
+
+    #[test]
+    fn test_invalid_input_handling() {
+        let mut emg = Emg::init();
+        emg.calibrate(0.5, 1.5);
+        assert!(emg.process_data(&[0.6]).is_err());
+        assert!(emg.process_data(&[0.6, 1.4, 2.0]).is_err());
+    }
 
     // TODO: Channel reading alternation
+    // notes: what are the different channel values?
+    #[test]
+    fn test_channel_reading_alternation() {
+        let mut emg = Emg::init();
+        emg.calibrate(0.5, 1.5);
+        assert_eq!(emg.process_data(&[0.6, 1.4]).unwrap(), 1); // Open
+        assert_eq!(emg.process_data(&[0.4, 1.6]).unwrap(), 0); // Close
+        assert_eq!(emg.process_data(&[0.5, 1.5]).unwrap(), -1); // Hold/No change
+    }
 }
