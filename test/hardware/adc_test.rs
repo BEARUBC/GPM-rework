@@ -52,7 +52,7 @@ impl Adc {
     /// current slave before pulling the new pin LOW to select the next one.
     ///
     /// # Arguments
-    /// * `pin` - GPIO pin number of the slave to select (0–27 on RPi)
+    /// * pin - GPIO pin number of the slave to select (0–27 on RPi)
     #[cfg(feature = "pi")]
     pub fn set_chip_select(&mut self, pin: u8) -> Result<()> {
         // De-select current slave
