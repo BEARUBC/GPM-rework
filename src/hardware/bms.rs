@@ -45,14 +45,18 @@ impl Bms {
 
     pub fn update(&mut self) {
         // TODO: Implement actual BMS reading
+        // Specifications from Docs (expected values of healthy battery):
+        // - voltage: 4.2V and 3.6V per cell
+        // - current: TBD in docs
+        // - temperature: should not exceed 41°C
         // For now, simulate healthy battery
         #[cfg(not(feature = "pi"))]
         {
             use rand::Rng;
             let mut rng = rand::rng();
-            self.voltage = 11.5 + rng.random::<f32>() * 1.0; // 11.5-12.5V
-            self.current = rng.random::<f32>() * 2.0; // 0-2A
-            self.temperature = 20.0 + rng.random::<f32>() * 10.0; // 20-30°C
+            self.voltage = 11.5 + rng.random::<f32>() * 1.0;
+            self.current = rng.random::<f32>() * 2.0;
+            self.temperature = 20.0 + rng.random::<f32>() * 10.0;
             self.is_healthy = self.voltage > 10.0 && self.temperature < 50.0;
         }
     }
