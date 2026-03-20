@@ -52,6 +52,9 @@ impl Maestro {
             5 => Channel::Channel5,
             _ => return Err(anyhow::anyhow!("Invalid channel: {}", channel)),
         };
+        // if pwm_value > 2200{
+        //     return Err(anyhow::anyhow!("Invalid PWM value: {}", pwm_value));
+        // }
         self.controller.set_target(ch, pwm_value)?;
         Ok(())
     }
@@ -61,6 +64,9 @@ impl Maestro {
         if channel > 5 {
             return Err(anyhow::anyhow!("Invalid channel: {}", channel));
         }
+        // if pwm_value > 2200{
+        //     return Err(anyhow::anyhow!("Invalid PWM value: {}", pwm_value));
+        // }
         self.pwm_values[channel as usize] = pwm_value;
         Ok(())
     }
@@ -135,11 +141,32 @@ impl MaestroDriver for Maestro {
 mod tests {
     use super::*;
 
-    // TODO: Channel range validation (0-5)
+    #[test]
+    fn test_invalid_channel() {
+        let mut maestro = Maestro::init();
+        assert!(maestro.set_target(6, 1500).is_err());
+    }
+    // TODO: Change PWM bound validation when calibrated for actual hardware
+    #[test]
+    fn test_pwm_value_stored() {
+        let mut maestro = Maestro::init();
+        assert!(maestro.set_target(0, 2200).is_ok());
+        assert_eq!(maestro.current_pwm(0).unwrap(), 2200);
+        //assert!(maestro.set_target(0, 2201).is_err());
+    }
 
-    // TODO: PWM value bounds
+    #[test]
+    fn test_valid_grip_types() {
+        let mut maestro = Maestro::init();
+        assert!(maestro.move_to_grip("rest").is_ok());
+        assert!(maestro.move_to_grip("open").is_ok());
+        assert!(maestro.move_to_grip("pinch").is_ok());
+        assert!(maestro.move_to_grip("power").is_ok());
+    }
 
-    // TODO: Grip position commands
-
-    // TODO: Invalid grip type handling
+    #[test]
+    fn test_invalid_grip_type() {
+        let mut maestro = Maestro::init();
+        assert!(maestro.move_to_grip("").is_err());
+    }
 }
