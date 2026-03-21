@@ -29,4 +29,4 @@ pi = ["dep:raestro", "dep:rppal", "dep:spidev"]
 
 [lib]
 name = "gpm"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
