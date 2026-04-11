@@ -1,5 +1,3 @@
-use pyo3::prelude::*;
-
 // ============================================================================
 // GPM Python Extension Module
 // ============================================================================
@@ -17,18 +15,23 @@ use pyo3::prelude::*;
 // Temporary: local hardware module (will be replaced by gpm_original)
 // TODO: Once gpm_original is integrated, remove this and update bindings to:
 //       use gpm_original::resources::*;
-mod hardware;
-mod hal;
 
-// Python bindings layer - wraps hardware implementations
+#[cfg(feature = "extension")]
+use pyo3::prelude::*;
+
+pub mod hardware;
+pub mod hal;
+
+#[cfg(feature = "extension")]
 mod python_bindings;
 
+#[cfg(feature = "extension")]
 use python_bindings::{bms, emg, fsr, maestro};
 
 /// Grasp Primary Module - Hardware interface
-/// 
+///
 /// This module provides Python bindings to the Rust hardware drivers.
-/// The actual hardware implementations come from the gpm_original crate.
+#[cfg(feature = "extension")]
 #[pymodule]
 fn gpm(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<maestro::Maestro>()?;

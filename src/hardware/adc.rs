@@ -41,7 +41,7 @@ pub struct Adc {
 #[cfg(feature = "pi")]
 impl Adc<Spi> {
     pub fn init(pin: u8, clock_speed: u32) -> Self {
-        let spi = Spi::new(Bus::Spi0, SlaveSelect::Ss0, clock_speed, Mode::Mode0)
+        let spi = Spi::new(Bus::Spi0, SlaveSelect::No, clock_speed, Mode::Mode0)
             .expect("Failed to initialize SPI");
 
         let mut cs = Gpio::new()
