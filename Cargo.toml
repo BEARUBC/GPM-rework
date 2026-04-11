@@ -7,11 +7,9 @@ edition = "2021"
 # PyO3 for Python bindings
 pyo3 = { version = "0.22", features = ["extension-module"] }
 
-# Import hardware implementations from gpm_original
-# After adding gpm_original as a submodule, uncomment this:
-gpm_original = { path = "./gpm_original", package = "gpm" }
+# gpm_original can be re-added when the submodule is complete (see SUBMODULE_INTEGRATION.md).
 
-# Temporary: Direct dependencies until submodule is set up
+# Direct dependencies (some mirror gpm_original for the `pi` feature)
 # These should eventually come from gpm_original
 anyhow = "1.0"
 tokio = { version = "1.38.0", features = ["rt", "sync"] }
