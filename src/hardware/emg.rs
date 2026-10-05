@@ -13,7 +13,21 @@ pub struct Emg {
 
 impl Resource for Emg {
     fn init() -> Self {
-        let adc = Adc::init(8, 1350000); // CS pin 8, 1.35 MHz clock
+        Self::init_with_cs(None)
+    }
+
+    fn name() -> String {
+        "Emg".to_string()
+    }
+}
+
+impl Emg {
+    pub fn init_with_cs(cs_pin: Option<u8>) -> Self {
+        let chosen_cs_pin = match cs_pin {
+            Some(pin) => pin,
+            None => 8,
+        };
+        let adc = Adc::init(chosen_cs_pin, 1350000);
         Emg {
             adc,
             buffer: Vec::new(),
@@ -25,12 +39,6 @@ impl Resource for Emg {
         }
     }
 
-    fn name() -> String {
-        "Emg".to_string()
-    }
-}
-
-impl Emg {
     pub fn configure(&mut self, buffer_size: usize) {
         self.buffer_size = buffer_size;
         self.buffer = Vec::with_capacity(buffer_size);

@@ -2,15 +2,11 @@
 use anyhow::{Context, Error, Result};
 
 #[cfg(feature = "pi")]
-use rppal::gpio::{Gpio, OutputPin};
-#[cfg(feature = "pi")]
 use rppal::spi::{Bus, Mode, SlaveSelect, Spi};
 
 pub struct Adc {
     #[cfg(feature = "pi")]
     pub spi: Spi,
-    #[cfg(feature = "pi")]
-    pub cs_pin: OutputPin,
     #[cfg(not(feature = "pi"))]
     _phantom: (),
 }
@@ -18,18 +14,16 @@ pub struct Adc {
 impl Adc {
     #[cfg(feature = "pi")]
     pub fn init(pin: u8, clock_speed: u32) -> Self {
-        let spi = Spi::new(Bus::Spi0, SlaveSelect::Ss0, clock_speed, Mode::Mode0)
+        let slave_select = match pin {
+            8 => SlaveSelect::Ss0, // EMG ADC: SPI0 CE0
+            7 => SlaveSelect::Ss1, // FSR ADC: SPI0 CE1
+            _ => panic!("Unsupported SPI0 CS GPIO {pin}; expected 8 (CE0) or 7 (CE1)"),
+        };
+
+        let spi = Spi::new(Bus::Spi0, slave_select, clock_speed, Mode::Mode0)
             .expect("Failed to initialize SPI");
 
-        let mut cs = Gpio::new()
-            .expect("Failed to initialize manual CS")
-            .get(pin)
-            .expect("Failed to get GPIO pin for CS")
-            .into_output();
-
-        cs.set_high();
-
-        Adc { spi, cs_pin: cs }
+        Adc { spi }
     }
 
     #[cfg(not(feature = "pi"))]
@@ -51,11 +45,9 @@ impl Adc {
         let tx = [start_bit, config_bits, 0x00];
         let mut rx = [0u8; 3];
 
-        self.cs_pin.set_low();
         self.spi
             .transfer(&mut rx, &tx)
             .context("SPI transfer failed during ADC read")?;
-        self.cs_pin.set_high();
 
         let result = ((rx[1] & 0b00000011) as u16) << 8 | (rx[2] as u16);
         Ok(result)

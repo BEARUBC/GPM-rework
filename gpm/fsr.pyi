@@ -1,4 +1,5 @@
 """Type stubs for FSR sensor interface"""
+from typing import Optional
 
 class FsrReading:
     """FSR sensor reading"""
@@ -10,15 +11,14 @@ class FsrReading:
 class Fsr:
     """FSR (Force Sensitive Resistor) sensor interface"""
     
-    def __init__(self) -> None:
-        """Initialize the FSR sensor"""
+    def __init__(self, cs_pin: Optional[int] = None) -> None:
+        """Initialize the FSR sensor (default CS: GPIO 7)"""
         ...
     
-    def configure(self, cs_pins: list[int], at_rest_threshold: int, pressure_threshold: int) -> None:
+    def configure(self, at_rest_threshold: int, pressure_threshold: int) -> None:
         """Configure FSR sensors
         
         Args:
-            cs_pins: List of CS pin numbers
             at_rest_threshold: ADC value threshold for at-rest state
             pressure_threshold: ADC value threshold for pressure detection
         """

@@ -2,11 +2,12 @@ use super::{adc::Adc, Resource};
 use anyhow::Result;
 
 pub struct Fsr {
+    pub adc: Adc,
     pub at_rest_threshold: u16,
     pub pressure_threshold: u16,
     pub clock_speed: u32,
     pub num_fsrs: usize,
-    pub cs_pins: [u8; 3],
+    pub cs_pins: [u8; 1],
     pub num_channels: u8,
 }
 
@@ -20,14 +21,7 @@ pub struct FsrReading {
 
 impl Resource for Fsr {
     fn init() -> Self {
-        Fsr {
-            at_rest_threshold: 900,
-            pressure_threshold: 500,
-            clock_speed: 1350000,
-            num_fsrs: 1,
-            cs_pins: [7, 8, 9], // Example CS pins
-            num_channels: 8,
-        }
+        Self::init_with_cs(None)
     }
 
     fn name() -> String {
@@ -36,9 +30,24 @@ impl Resource for Fsr {
 }
 
 impl Fsr {
-    pub fn configure(&mut self, cs_pins: [u8; 3], at_rest: u16, pressure: u16) {
-        self.cs_pins = cs_pins;
-        self.num_fsrs = cs_pins.len();
+    pub fn init_with_cs(cs_pin: Option<u8>) -> Self {
+        let chosen_cs_pin = match cs_pin {
+            Some(pin) => pin,
+            None => 7,
+        };
+        let adc = Adc::init(chosen_cs_pin, 1350000);
+        Fsr {
+            adc,
+            at_rest_threshold: 900,
+            pressure_threshold: 500,
+            clock_speed: 1350000,
+            num_fsrs: 1,
+            cs_pins: [chosen_cs_pin],
+            num_channels: 8,
+        }
+    }
+
+    pub fn configure(&mut self, at_rest: u16, pressure: u16) {
         self.at_rest_threshold = at_rest;
         self.pressure_threshold = pressure;
     }
@@ -46,11 +55,9 @@ impl Fsr {
     pub fn read_all(&mut self) -> Result<Vec<FsrReading>> {
         let mut readings = Vec::new();
 
-        for (fsr_id, &cs_pin) in self.cs_pins.iter().enumerate() {
-            let mut adc = Adc::init(cs_pin, self.clock_speed);
-
+        for (fsr_id, _) in self.cs_pins.iter().enumerate() {
             for channel in 0..self.num_channels {
-                let value = adc.read_channel(channel)?;
+                let value = self.adc.read_channel(channel)?;
                 let pressure_detected = value < self.at_rest_threshold;
 
                 readings.push(FsrReading {

@@ -22,13 +22,13 @@ CONFIG = load_config()
 # Hardware Configuration
 HARDWARE_CONFIG = {
     'emg_buffer_size': CONFIG.get('hardware', {}).get('emg', {}).get('buffer_size', 256),
-    'emg_cs_pin': CONFIG.get('hardware', {}).get('emg', {}).get('cs_pin', 8),
+    'emg_cs_pin': CONFIG.get('hardware', {}).get('emg', {}).get('cs_pin'),
     'emg_clock_speed': CONFIG.get('hardware', {}).get('emg', {}).get('clock_speed', 1350000),
     'emg_inner_threshold': CONFIG.get('hardware', {}).get('emg', {}).get('inner_threshold', 450.0),
     'emg_outer_threshold': CONFIG.get('hardware', {}).get('emg', {}).get('outer_threshold', 450.0),
     'emg_sample_rate': CONFIG.get('hardware', {}).get('emg', {}).get('sample_rate', 1000),
     
-    'fsr_cs_pins': CONFIG.get('hardware', {}).get('fsr', {}).get('cs_pins', [7]),
+    'fsr_cs_pin': CONFIG.get('hardware', {}).get('fsr', {}).get('cs_pin'),
     'fsr_at_rest_threshold': CONFIG.get('hardware', {}).get('fsr', {}).get('at_rest_threshold', 900),
     'fsr_pressure_threshold': CONFIG.get('hardware', {}).get('fsr', {}).get('pressure_threshold', 500),
     'fsr_clock_speed': CONFIG.get('hardware', {}).get('fsr', {}).get('clock_speed', 1350000),

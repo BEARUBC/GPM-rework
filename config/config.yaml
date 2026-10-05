@@ -5,7 +5,7 @@ hardware:
   # EMG Sensor Configuration
   emg:
     buffer_size: 256
-    cs_pin: 8
+    cs_pin: null  # Rust default is GPIO 8 for emg: none-null value will override this
     clock_speed: 1350000
     inner_threshold: 450.0
     outer_threshold: 450.0
@@ -13,7 +13,7 @@ hardware:
     
   # FSR Sensor Configuration
   fsr:
-    cs_pins: [7]
+    cs_pin: null  # Rust default is GPIO 7 for fsr: none-null value will override this
     at_rest_threshold: 900
     pressure_threshold: 500
     clock_speed: 1350000

@@ -1,10 +1,11 @@
 """Type stubs for EMG sensor interface"""
+from typing import Optional
 
 class Emg:
     """EMG (Electromyography) sensor interface"""
     
-    def __init__(self) -> None:
-        """Initialize the EMG sensor"""
+    def __init__(self, cs_pin: Optional[int] = None) -> None:
+        """Initialize the EMG sensor (default CS: GPIO 8)"""
         ...
     
     def configure(self, buffer_size: int) -> None:

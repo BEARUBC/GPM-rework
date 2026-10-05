@@ -6,7 +6,6 @@ use pyo3::prelude::*;
 
 // Temporary: using local hardware module
 use crate::hardware::fsr::{Fsr as RustFsr, FsrReading as RustFsrReading};
-use crate::hardware::Resource;
 
 /// Python-exposed FSR reading
 #[pyclass(name = "FsrReading")]
@@ -43,25 +42,24 @@ pub struct Fsr {
 impl Fsr {
     /// Initialize the FSR sensor
     #[new]
-    pub fn new() -> PyResult<Self> {
-        let inner = RustFsr::init();
+    #[pyo3(signature = (cs_pin=None))]
+    pub fn new(cs_pin: Option<u8>) -> PyResult<Self> {
+        let inner = RustFsr::init_with_cs(cs_pin);
         Ok(Fsr { inner })
     }
 
     /// Configure FSR sensors
     ///
     /// Args:
-    ///     cs_pins: List of CS pin numbers
     ///     at_rest_threshold: ADC value threshold for at-rest state
     ///     pressure_threshold: ADC value threshold for pressure detection
     pub fn configure(
         &mut self,
-        cs_pins: [u8; 3],
         at_rest_threshold: u16,
         pressure_threshold: u16,
     ) -> PyResult<()> {
         self.inner
-            .configure(cs_pins, at_rest_threshold, pressure_threshold);
+            .configure(at_rest_threshold, pressure_threshold);
         Ok(())
     }
 
