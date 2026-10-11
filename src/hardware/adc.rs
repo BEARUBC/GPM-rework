@@ -13,22 +13,25 @@ pub struct Adc {
 
 impl Adc {
     #[cfg(feature = "pi")]
-    pub fn init(pin: u8, clock_speed: u32) -> Self {
+    pub fn init(pin: u8, clock_speed: u32) -> Result<Self> {
         let slave_select = match pin {
-            8 => SlaveSelect::Ss0, // EMG ADC: SPI0 CE0
-            7 => SlaveSelect::Ss1, // FSR ADC: SPI0 CE1
-            _ => panic!("Unsupported SPI0 CS GPIO {pin}; expected 8 (CE0) or 7 (CE1)"),
+            8 => SlaveSelect::Ss0, // EMG ADC: SPI0 CS0
+            7 => SlaveSelect::Ss1, // FSR ADC: SPI0 CS1
+            _ => anyhow::bail!("Unsupported SPI0 CS GPIO {pin}: expected 8 (CS0) or 7 (CS1)"),
         };
 
         let spi = Spi::new(Bus::Spi0, slave_select, clock_speed, Mode::Mode0)
-            .expect("Failed to initialize SPI");
+            .with_context(|| format!("Failed to initialize SPI0 on CS GPIO {pin}"))?;
 
-        Adc { spi }
+        Ok(Adc { spi })
     }
 
     #[cfg(not(feature = "pi"))]
-    pub fn init(_pin: u8, _clock_speed: u32) -> Self {
-        Adc { _phantom: () }
+    pub fn init(pin: u8, _clock_speed: u32) -> Result<Self> {
+        if !matches!(pin, 8 | 7) {
+            anyhow::bail!("Unsupported SPI0 CS GPIO {pin}: expected 8 (CS0) or 7 (CS1)");
+        }
+        Ok(Adc { _phantom: () })
     }
 
     #[cfg(feature = "pi")]

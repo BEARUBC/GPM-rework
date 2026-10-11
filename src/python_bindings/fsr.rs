@@ -44,7 +44,11 @@ impl Fsr {
     #[new]
     #[pyo3(signature = (cs_pin=None))]
     pub fn new(cs_pin: Option<u8>) -> PyResult<Self> {
-        let inner = RustFsr::init_with_cs(cs_pin);
+        let inner = RustFsr::init_with_cs(cs_pin).map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!(
+                "FSR initialization failed: {e:#}"
+            ))
+        })?;
         Ok(Fsr { inner })
     }
 

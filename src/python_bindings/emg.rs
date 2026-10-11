@@ -19,7 +19,11 @@ impl Emg {
     #[new]
     #[pyo3(signature = (cs_pin=None))]
     pub fn new(cs_pin: Option<u8>) -> PyResult<Self> {
-        let inner = RustEmg::init_with_cs(cs_pin);
+        let inner = RustEmg::init_with_cs(cs_pin).map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!(
+                "EMG initialization failed: {e:#}"
+            ))
+        })?;
         Ok(Emg { inner })
     }
 

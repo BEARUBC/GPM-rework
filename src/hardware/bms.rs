@@ -17,13 +17,13 @@ pub struct BmsStatus {
 }
 
 impl Resource for Bms {
-    fn init() -> Self {
-        Bms {
+    fn init() -> anyhow::Result<Self> {
+        Ok(Bms {
             voltage: 12.0,
             current: 0.0,
             temperature: 25.0,
             is_healthy: true,
-        }
+        })
     }
 
     fn name() -> String {

@@ -20,7 +20,7 @@ pub struct FsrReading {
 }
 
 impl Resource for Fsr {
-    fn init() -> Self {
+    fn init() -> Result<Self> {
         Self::init_with_cs(None)
     }
 
@@ -30,13 +30,13 @@ impl Resource for Fsr {
 }
 
 impl Fsr {
-    pub fn init_with_cs(cs_pin: Option<u8>) -> Self {
+    pub fn init_with_cs(cs_pin: Option<u8>) -> Result<Self> {
         let chosen_cs_pin = match cs_pin {
             Some(pin) => pin,
             None => 7,
         };
-        let adc = Adc::init(chosen_cs_pin, 1350000);
-        Fsr {
+        let adc = Adc::init(chosen_cs_pin, 1350000)?;
+        Ok(Fsr {
             adc,
             at_rest_threshold: 900,
             pressure_threshold: 500,
@@ -44,7 +44,7 @@ impl Fsr {
             num_fsrs: 1,
             cs_pins: [chosen_cs_pin],
             num_channels: 8,
-        }
+        })
     }
 
     pub fn configure(&mut self, at_rest: u16, pressure: u16) {

@@ -12,7 +12,7 @@ pub struct Emg {
 }
 
 impl Resource for Emg {
-    fn init() -> Self {
+    fn init() -> Result<Self> {
         Self::init_with_cs(None)
     }
 
@@ -22,13 +22,13 @@ impl Resource for Emg {
 }
 
 impl Emg {
-    pub fn init_with_cs(cs_pin: Option<u8>) -> Self {
+    pub fn init_with_cs(cs_pin: Option<u8>) -> Result<Self> {
         let chosen_cs_pin = match cs_pin {
             Some(pin) => pin,
             None => 8,
         };
-        let adc = Adc::init(chosen_cs_pin, 1350000);
-        Emg {
+        let adc = Adc::init(chosen_cs_pin, 1350000)?;
+        Ok(Emg {
             adc,
             buffer: Vec::new(),
             buffer_size: 256,
@@ -36,7 +36,7 @@ impl Emg {
             outer_threshold: 450.0,
             current_channel_0: 0.0,
             current_channel_1: 0.0,
-        }
+        })
     }
 
     pub fn configure(&mut self, buffer_size: usize) {

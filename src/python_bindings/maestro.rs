@@ -19,7 +19,11 @@ impl Maestro {
     /// Initialize the Maestro controller
     #[new]
     pub fn new() -> PyResult<Self> {
-        let inner = RustMaestro::init();
+        let inner = RustMaestro::init().map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!(
+                "Maestro initialization failed: {e:#}"
+            ))
+        })?;
         Ok(Maestro { inner })
     }
 
