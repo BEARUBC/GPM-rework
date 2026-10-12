@@ -13,7 +13,7 @@ pub struct Emg {
 
 impl Resource for Emg {
     fn init() -> Result<Self> {
-        Self::init_with_cs(None)
+        anyhow::bail!("No pin configured for EMG ADC")
     }
 
     fn name() -> String {
@@ -22,12 +22,8 @@ impl Resource for Emg {
 }
 
 impl Emg {
-    pub fn init_with_cs(cs_pin: Option<u8>) -> Result<Self> {
-        let chosen_cs_pin = match cs_pin {
-            Some(pin) => pin,
-            None => 8,
-        };
-        let adc = Adc::init(chosen_cs_pin, 1350000)?;
+    pub fn init_with_cs(cs_pin: u8, spi_bus: u8) -> Result<Self> {
+        let adc = Adc::init(cs_pin, 1350000, spi_bus)?;
         Ok(Emg {
             adc,
             buffer: Vec::new(),

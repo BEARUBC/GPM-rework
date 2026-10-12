@@ -42,9 +42,9 @@ pub struct Fsr {
 impl Fsr {
     /// Initialize the FSR sensor
     #[new]
-    #[pyo3(signature = (cs_pin=None))]
-    pub fn new(cs_pin: Option<u8>) -> PyResult<Self> {
-        let inner = RustFsr::init_with_cs(cs_pin).map_err(|e| {
+    #[pyo3(signature = (cs_pin, spi_bus))]
+    pub fn new(cs_pin: u8, spi_bus: u8) -> PyResult<Self> {
+        let inner = RustFsr::init_with_cs(cs_pin, spi_bus).map_err(|e| {
             pyo3::exceptions::PyRuntimeError::new_err(format!(
                 "FSR initialization failed: {e:#}"
             ))

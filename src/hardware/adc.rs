@@ -13,23 +13,23 @@ pub struct Adc {
 
 impl Adc {
     #[cfg(feature = "pi")]
-    pub fn init(pin: u8, clock_speed: u32) -> Result<Self> {
-        let slave_select = match pin {
-            8 => SlaveSelect::Ss0, // EMG ADC: SPI0 CS0
-            7 => SlaveSelect::Ss1, // FSR ADC: SPI0 CS1
-            _ => anyhow::bail!("Unsupported SPI0 CS GPIO {pin}: expected 8 (CS0) or 7 (CS1)"),
+    pub fn init(pin: u8, clock_speed: u32, spi_bus: u8) -> Result<Self> {
+        let (slave_select, bus) = match (pin, spi_bus) {
+            (8, 0) => (SlaveSelect::Ss0, Bus::Spi0), // EMG ADC: SPI0 CS0
+            (7, 0) => (SlaveSelect::Ss1, Bus::Spi0), // FSR ADC: SPI0 CS1
+            _ => anyhow::bail!("Unsupported SPI-CS configuration: SPI bus {spi_bus}, CS on GPIO {pin}"),
         };
 
-        let spi = Spi::new(Bus::Spi0, slave_select, clock_speed, Mode::Mode0)
-            .with_context(|| format!("Failed to initialize SPI0 on CS GPIO {pin}"))?;
+        let spi = Spi::new(bus, slave_select, clock_speed, Mode::Mode0)
+            .with_context(|| format!("Failed to initialize SPI{spi_bus} on CS GPIO {pin}"))?;
 
         Ok(Adc { spi })
     }
 
     #[cfg(not(feature = "pi"))]
-    pub fn init(pin: u8, _clock_speed: u32) -> Result<Self> {
-        if !matches!(pin, 8 | 7) {
-            anyhow::bail!("Unsupported SPI0 CS GPIO {pin}: expected 8 (CS0) or 7 (CS1)");
+    pub fn init(pin: u8, _clock_speed: u32, spi_bus: u8) -> Result<Self> {
+        if !matches!((pin, spi_bus), (8, 0) | (7, 0)) {
+            anyhow::bail!("Unsupported SPI-CS configuration: SPI bus {spi_bus}, CS on GPIO {pin}");
         }
         Ok(Adc { _phantom: () })
     }

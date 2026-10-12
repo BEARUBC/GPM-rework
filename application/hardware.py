@@ -7,14 +7,23 @@ class HardwareInterface:
     """Wrapper to manage all hardware initialization and lifecycle"""
    
     def __init__(self, config: dict = None):
-        self.config = config or HARDWARE_CONFIG
+        self.config = HARDWARE_CONFIG if config is None else config
         emg_cs_pin = self.config.get('emg_cs_pin')
         fsr_cs_pin = self.config.get('fsr_cs_pin')
+        emg_spi = self.config.get('emg_spi')
+        fsr_spi = self.config.get('fsr_spi')
+        if emg_cs_pin is None:
+            raise ValueError('Missing required hardware.emg.cs_pin configuration')
+        if fsr_cs_pin is None:
+            raise ValueError('Missing required hardware.fsr.cs_pin configuration')
+        if emg_spi is None:
+            raise ValueError('Missing required hardware.emg.spi configuration')
+        if fsr_spi is None:
+            raise ValueError('Missing required hardware.fsr.spi configuration')
         self.maestro = Maestro()
-        # Take Rust hardcoded values if no config override argument given
-        self.emg = Emg() if emg_cs_pin is None else Emg(cs_pin=emg_cs_pin)
+        self.emg = Emg(cs_pin=emg_cs_pin, spi_bus=emg_spi)
         self.bms = Bms()
-        self.fsr = Fsr() if fsr_cs_pin is None else Fsr(cs_pin=fsr_cs_pin)
+        self.fsr = Fsr(cs_pin=fsr_cs_pin, spi_bus=fsr_spi)
        
     def initialize(self):
         """Initialize all hardware with config"""

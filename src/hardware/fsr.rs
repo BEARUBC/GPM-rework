@@ -21,7 +21,7 @@ pub struct FsrReading {
 
 impl Resource for Fsr {
     fn init() -> Result<Self> {
-        Self::init_with_cs(None)
+        anyhow::bail!("No CS pin configured for FSR ADC")
     }
 
     fn name() -> String {
@@ -30,19 +30,15 @@ impl Resource for Fsr {
 }
 
 impl Fsr {
-    pub fn init_with_cs(cs_pin: Option<u8>) -> Result<Self> {
-        let chosen_cs_pin = match cs_pin {
-            Some(pin) => pin,
-            None => 7,
-        };
-        let adc = Adc::init(chosen_cs_pin, 1350000)?;
+    pub fn init_with_cs(cs_pin: u8, spi_bus: u8) -> Result<Self> {
+        let adc = Adc::init(cs_pin, 1350000, spi_bus)?;
         Ok(Fsr {
             adc,
             at_rest_threshold: 900,
             pressure_threshold: 500,
             clock_speed: 1350000,
             num_fsrs: 1,
-            cs_pins: [chosen_cs_pin],
+            cs_pins: [cs_pin],
             num_channels: 8,
         })
     }
