@@ -62,6 +62,7 @@ GPM-rework/
 - Rust toolchain (rustup)
 - Python 3.9+
 - Maturin (`pip install maturin`)
+- Protocol Buffers compiler (`protoc`), required by `gpm_original`
 
 ### ⚠️ Current Status: Transition to Submodule
 
@@ -181,13 +182,21 @@ maestro.set_target(0, 1500)  # IDE provides parameter hints
 
 ### Testing
 
+The Python tests in `tests/` cover the state machine, grip controller, and safety
+monitor using mock devices. Build the Rust library first so the application can
+import the real class definitions; the tests do not require physical hardware.
+
 ```bash
-# Run tests
-pytest
+# In an activated virtual environment, build without the pi feature
+maturin develop --extras dev
+python -m pytest tests/ -q
 
 # With coverage
-pytest --cov=application --cov-report=html
+python -m pytest tests/ --cov=application --cov-report=html
 ```
+
+The `gpm` Python package loads its compiled Rust library as `gpm._native`.
+Application code continues to use imports such as `from gpm import Maestro`.
 
 ### Mock Hardware
 

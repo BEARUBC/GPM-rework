@@ -26,4 +26,4 @@ ui = [
 [tool.maturin]
 features = ["pyo3/extension-module"]
 python-source = "."
-module-name = "gpm"
+module-name = "gpm._native"
