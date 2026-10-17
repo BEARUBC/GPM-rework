@@ -1,5 +1,6 @@
-use anyhow::Result;
 use super::Resource;
+use crate::hal::traits::MaestroDriver;
+use anyhow::Result;
 
 #[cfg(feature = "pi")]
 use anyhow::Context;
@@ -117,4 +118,31 @@ impl Maestro {
         }
         Ok(())
     }
+}
+
+impl MaestroDriver for Maestro {
+    fn set_target(&mut self, channel: u8, pwm_value: u16) -> Result<()> {
+        Maestro::set_target(self, channel, pwm_value)
+    }
+
+    fn current_pwm(&self, channel: u8) -> Result<u16> {
+        Maestro::current_pwm(self, channel)
+    }
+
+    fn move_to_grip(&mut self, grip_type: &str) -> Result<()> {
+        Maestro::move_to_grip(self, grip_type)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TODO: Channel range validation (0-5)
+
+    // TODO: PWM value bounds
+
+    // TODO: Grip position commands
+
+    // TODO: Invalid grip type handling
 }

@@ -1,4 +1,5 @@
 use super::{adc::Adc, Resource};
+use crate::hal::traits::{AdcDriver, FsrDriver};
 use anyhow::Result;
 
 pub struct Fsr {
@@ -74,4 +75,27 @@ impl Fsr {
         // Return true if any sensor detects pressure
         Ok(readings.iter().any(|r| r.pressure_detected))
     }
+}
+
+impl FsrDriver for Fsr {
+    fn read_all(&mut self) -> Result<Vec<FsrReading>> {
+        Fsr::read_all(self)
+    }
+
+    fn process_data(&mut self) -> Result<bool> {
+        Fsr::process_data(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TODO: Threshold detection logic
+
+    // TODO: Multiple sensor reading
+
+    // TODO: Pressure detection across all channels
+
+    // TODO: CS pin configuration
 }

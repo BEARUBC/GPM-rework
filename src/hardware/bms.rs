@@ -1,4 +1,5 @@
 use super::Resource;
+use crate::hal::traits::BmsDriver;
 
 pub struct Bms {
     pub voltage: f32,
@@ -64,5 +65,72 @@ impl Bms {
         ((self.voltage - min_voltage) / (max_voltage - min_voltage) * 100.0)
             .max(0.0)
             .min(100.0)
+    }
+}
+
+impl BmsDriver for Bms {
+    fn get_status(&self) -> BmsStatus {
+        Bms::get_status(self)
+    }
+
+    fn update(&mut self) {
+        Bms::update(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_charge_percentage_calculation() {
+        let mut bms = Bms::init();
+        bms.voltage = 10.0;
+        assert_eq!(bms.calculate_charge_percentage(), 0.0);
+
+        bms.voltage = 12.6;
+        assert_eq!(bms.calculate_charge_percentage(), 100.0);
+
+        bms.voltage = 11.3;
+        assert_eq!(bms.calculate_charge_percentage(), 50.0);
+    }
+
+    #[test]
+    fn test_charge_calculation_out_of_range() {
+        let mut bms = Bms::init();
+        bms.voltage = 9.9;
+        assert_eq!(bms.calculate_charge_percentage(), 0.0);
+
+        bms.voltage = 12.7;
+        assert_eq!(bms.calculate_charge_percentage(), 100.0);
+    }
+
+    #[test]
+    fn test_health_status_logic() {
+        let mut bms = Bms::init();
+        bms.voltage = 11.0;
+        bms.temperature = 20.0;
+        assert!(bms.is_healthy);
+
+        bms.voltage = 10.0;
+        assert!(!bms.is_healthy);
+
+        bms.voltage = 10.0;
+        bms.temperature = 50.0;
+        assert!(!bms.is_healthy);
+        // TODO: this one fails b/c update isn't properly implemented
+    }
+
+    #[test]
+    fn test_status_struct_population() {
+        let mut bms = Bms::init();
+        bms.voltage = 10.0;
+        bms.temperature = 20.0;
+        bms.is_healthy = true;
+
+        let status = bms.get_status();
+        assert_eq!(status.voltage, 10.0);
+        assert_eq!(status.temperature, 20.0);
+        assert!(status.is_healthy);
     }
 }
