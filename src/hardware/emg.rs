@@ -82,9 +82,9 @@ impl Emg {
 
         // Simple threshold-based classification
         // 0 = close, 1 = open
-        if values[0] >= self.inner_threshold && values[1] <= self.outer_threshold {
+        if values[0] > self.inner_threshold && values[1] < self.outer_threshold {
             Ok(1) // Open
-        } else if values[0] <= self.inner_threshold && values[1] >= self.outer_threshold {
+        } else if values[0] < self.inner_threshold && values[1] > self.outer_threshold {
             Ok(0) // Close
         } else {
             Ok(-1) // Hold/No change
@@ -120,7 +120,7 @@ mod tests {
 
     #[test]
     fn test_buffer_size_configuration() {
-        let mut emg = Emg::init();
+        let mut emg = Emg::init_with_cs(8, 0).unwrap();
         emg.buffer_size = 10;
         assert_eq!(emg.buffer_size, 10);
 
@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn test_threshold_calibration() {
-        let mut emg = Emg::init();
+        let mut emg = Emg::init_with_cs(8, 0).unwrap();
         emg.calibrate(0.5, 1.5);
         assert_eq!(emg.inner_threshold, 0.5);
         assert_eq!(emg.outer_threshold, 1.5);
@@ -138,7 +138,7 @@ mod tests {
 
     #[test]
     fn test_process_data_classification() {
-        let mut emg = Emg::init();
+        let mut emg = Emg::init_with_cs(8, 0).unwrap();
         emg.calibrate(0.5, 1.5);
         assert_eq!(emg.process_data(&[0.6, 1.4]).unwrap(), 1); // Open
         assert_eq!(emg.process_data(&[0.4, 1.6]).unwrap(), 0); // Close
@@ -147,7 +147,7 @@ mod tests {
 
     #[test]
     fn test_invalid_input_handling() {
-        let mut emg = Emg::init();
+        let mut emg = Emg::init_with_cs(8, 0).unwrap();
         emg.calibrate(0.5, 1.5);
         assert!(emg.process_data(&[0.6]).is_err());
         assert!(emg.process_data(&[0.6, 1.4, 2.0]).is_err());
@@ -157,7 +157,7 @@ mod tests {
     // notes: what are the different channel values?
     #[test]
     fn test_channel_reading_alternation() {
-        let mut emg = Emg::init();
+        let mut emg = Emg::init_with_cs(8, 0).unwrap();
         emg.calibrate(0.5, 1.5);
         assert_eq!(emg.process_data(&[0.6, 1.4]).unwrap(), 1); // Open
         assert_eq!(emg.process_data(&[0.4, 1.6]).unwrap(), 0); // Close
