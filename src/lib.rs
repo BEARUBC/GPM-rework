@@ -30,7 +30,7 @@ use python_bindings::{bms, emg, fsr, maestro};
 /// This module provides Python bindings to the Rust hardware drivers.
 /// The actual hardware implementations come from the gpm_original crate.
 #[pymodule]
-fn gpm(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<maestro::Maestro>()?;
     m.add_class::<emg::Emg>()?;
     m.add_class::<bms::Bms>()?;

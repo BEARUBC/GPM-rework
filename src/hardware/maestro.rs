@@ -3,6 +3,9 @@ use crate::hal::traits::MaestroDriver;
 use anyhow::Result;
 
 #[cfg(feature = "pi")]
+use anyhow::Context;
+
+#[cfg(feature = "pi")]
 use raestro::maestro::{
     builder::Builder,
     constants::{Baudrate, Channel},
@@ -19,20 +22,20 @@ pub struct Maestro {
 
 impl Resource for Maestro {
     #[cfg(feature = "pi")]
-    fn init() -> Self {
-        let controller: raestro::maestro::Maestro = Builder::default()
+    fn init() -> Result<Self> {
+        let controller: std::result::Result<raestro::maestro::Maestro, _> = Builder::default()
             .baudrate(Baudrate::Baudrate11520)
             .block_duration(Duration::from_millis(100))
-            .try_into()
-            .expect("Could not initialize Raestro");
-        Maestro { controller }
+            .try_into();
+        let controller = controller.context("Could not initialize Raestro")?;
+        Ok(Maestro { controller })
     }
 
     #[cfg(not(feature = "pi"))]
-    fn init() -> Self {
-        Maestro {
+    fn init() -> Result<Self> {
+        Ok(Maestro {
             pwm_values: [1500; 6],
-        }
+        })
     }
 
     fn name() -> String {

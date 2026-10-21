@@ -47,7 +47,11 @@ impl Bms {
     /// Initialize the BMS
     #[new]
     pub fn new() -> PyResult<Self> {
-        let inner = RustBms::init();
+        let inner = RustBms::init().map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!(
+                "BMS initialization failed: {e:#}"
+            ))
+        })?;
         Ok(Bms { inner })
     }
 

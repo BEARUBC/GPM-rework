@@ -18,13 +18,13 @@ pub struct BmsStatus {
 }
 
 impl Resource for Bms {
-    fn init() -> Self {
-        Bms {
+    fn init() -> anyhow::Result<Self> {
+        Ok(Bms {
             voltage: 12.0,
             current: 0.0,
             temperature: 25.0,
             is_healthy: true,
-        }
+        })
     }
 
     fn name() -> String {
@@ -84,7 +84,7 @@ mod tests {
 
     #[test]
     fn test_charge_percentage_calculation() {
-        let mut bms = Bms::init();
+        let mut bms = Bms::init().unwrap();
         bms.voltage = 10.0;
         assert_eq!(bms.calculate_charge_percentage(), 0.0);
 
@@ -97,7 +97,7 @@ mod tests {
 
     #[test]
     fn test_charge_calculation_out_of_range() {
-        let mut bms = Bms::init();
+        let mut bms = Bms::init().unwrap();
         bms.voltage = 9.9;
         assert_eq!(bms.calculate_charge_percentage(), 0.0);
 
@@ -107,7 +107,7 @@ mod tests {
 
     #[test]
     fn test_health_status_logic() {
-        let mut bms = Bms::init();
+        let mut bms = Bms::init().unwrap();
         bms.voltage = 11.0;
         bms.temperature = 20.0;
         assert!(bms.is_healthy);
@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn test_status_struct_population() {
-        let mut bms = Bms::init();
+        let mut bms = Bms::init().unwrap();
         bms.voltage = 10.0;
         bms.temperature = 20.0;
         bms.is_healthy = true;

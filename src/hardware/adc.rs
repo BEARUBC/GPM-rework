@@ -3,8 +3,6 @@ use crate::hal::traits::AdcDriver;
 use anyhow::{Context, Error, Result};
 
 #[cfg(feature = "pi")]
-use rppal::gpio::{Gpio, OutputPin};
-#[cfg(feature = "pi")]
 use rppal::spi::{Bus, Mode, SlaveSelect, Spi};
 
 /// Extracts the 10-bit ADC result from a 3-byte MCP3008 SPI response.
@@ -14,7 +12,8 @@ pub(crate) fn parse_adc_response(rx: [u8; 3]) -> u16 {
 }
 
 #[cfg(feature = "pi")]
-pub(crate) trait SpiTransfer {
+/// SPI byte exchange used by the ADC; tests can supply a fake implementation.
+pub trait SpiTransfer {
     fn transfer(&mut self, rx: &mut [u8], tx: &[u8]) -> anyhow::Result<()>;
 }
 
@@ -30,7 +29,6 @@ impl SpiTransfer for Spi {
 #[cfg(feature = "pi")]
 pub struct Adc<S: SpiTransfer = Spi> {
     pub spi: S,
-    pub cs_pin: Option<OutputPin>,
 }
 
 #[cfg(not(feature = "pi"))]
@@ -40,29 +38,29 @@ pub struct Adc {
 
 #[cfg(feature = "pi")]
 impl Adc<Spi> {
-    pub fn init(pin: u8, clock_speed: u32) -> Self {
-        let spi = Spi::new(Bus::Spi0, SlaveSelect::Ss0, clock_speed, Mode::Mode0)
-            .expect("Failed to initialize SPI");
+    pub fn init(pin: u8, clock_speed: u32, spi_bus: u8) -> Result<Self> {
+        let (slave_select, bus) = match (pin, spi_bus) {
+            (8, 0) => (SlaveSelect::Ss0, Bus::Spi0), // EMG ADC: SPI0 CS0
+            (7, 0) => (SlaveSelect::Ss1, Bus::Spi0), // FSR ADC: SPI0 CS1
+            _ => anyhow::bail!(
+                "Unsupported SPI-CS configuration: SPI bus {spi_bus}, CS on GPIO {pin}"
+            ),
+        };
 
-        let mut cs = Gpio::new()
-            .expect("Failed to initialize manual CS")
-            .get(pin)
-            .expect("Failed to get GPIO pin for CS")
-            .into_output();
+        let spi = Spi::new(bus, slave_select, clock_speed, Mode::Mode0)
+            .with_context(|| format!("Failed to initialize SPI{spi_bus} on CS GPIO {pin}"))?;
 
-        cs.set_high();
-
-        Adc {
-            spi,
-            cs_pin: Some(cs),
-        }
+        Ok(Adc { spi })
     }
 }
 
 #[cfg(not(feature = "pi"))]
 impl Adc {
-    pub fn init(_pin: u8, _clock_speed: u32) -> Self {
-        Adc { _phantom: () }
+    pub fn init(pin: u8, _clock_speed: u32, spi_bus: u8) -> Result<Self> {
+        if !matches!((pin, spi_bus), (8, 0) | (7, 0)) {
+            anyhow::bail!("Unsupported SPI-CS configuration: SPI bus {spi_bus}, CS on GPIO {pin}");
+        }
+        Ok(Adc { _phantom: () })
     }
 
     pub fn read_channels(&mut self, channels: &[u8]) -> Result<Vec<u16>> {
@@ -118,13 +116,8 @@ impl<S: SpiTransfer> AdcDriver for Adc<S> {
         let tx = [start_bit, config_bits, 0x00u8];
         let mut rx = [0u8; 3];
 
-        if let Some(ref mut cs) = self.cs_pin {
-            cs.set_low();
-        }
+        // The SPI peripheral controls the configured hardware chip-select line.
         self.spi.transfer(&mut rx, &tx)?;
-        if let Some(ref mut cs) = self.cs_pin {
-            cs.set_high();
-        }
 
         Ok(parse_adc_response(rx))
     }
@@ -162,16 +155,40 @@ mod tests {
         assert_eq!(parse_adc_response([0x00, 0xFF, 0x00]), 0x0300);
     }
 
+    // Channel tests use simulation off-Pi and fake SPI with the pi feature.
+    #[cfg(not(feature = "pi"))]
+    fn test_adc() -> Adc {
+        Adc::init(8, 1_000_000, 0).unwrap()
+    }
+
+    #[cfg(feature = "pi")]
+    fn test_adc() -> Adc<MockSpi> {
+        make_mock_adc(MockSpi {
+            response: [0x00, 0x01, 0xF4], // 500
+            should_fail: false,
+        })
+    }
+
     // --- Channel validation tests (both builds) ---
 
+    #[cfg(not(feature = "pi"))]
     #[test]
     fn init_succeeds() {
-        let _adc = Adc::init(0, 1_000_000);
+        for pin in [8, 7] {
+            assert!(Adc::init(pin, 1_000_000, 0).is_ok());
+        }
+    }
+
+    #[test]
+    fn init_rejects_unsupported_spi_cs() {
+        for (pin, bus) in [(0, 0), (8, 1), (7, 1)] {
+            assert!(Adc::init(pin, 1_000_000, bus).is_err());
+        }
     }
 
     #[test]
     fn read_valid_channels() {
-        let mut adc = Adc::init(0, 1_000_000);
+        let mut adc = test_adc();
         for ch in 0..=7u8 {
             let result = adc.read_channel(ch);
             assert!(result.is_ok(), "channel {ch} should be valid");
@@ -180,19 +197,19 @@ mod tests {
 
     #[test]
     fn read_channel_7_boundary() {
-        let mut adc = Adc::init(0, 1_000_000);
+        let mut adc = test_adc();
         assert!(adc.read_channel(7).is_ok(), "channel 7 should be valid");
     }
 
     #[test]
     fn read_channel_8_boundary() {
-        let mut adc = Adc::init(0, 1_000_000);
+        let mut adc = test_adc();
         assert!(adc.read_channel(8).is_err(), "channel 8 should be invalid");
     }
 
     #[test]
     fn read_channel_invalid_error_message() {
-        let mut adc = Adc::init(0, 1_000_000);
+        let mut adc = test_adc();
         let err = adc.read_channel(42).unwrap_err();
         assert!(
             err.to_string().contains("42"),
@@ -202,7 +219,7 @@ mod tests {
 
     #[test]
     fn read_channel_value_in_adc_range() {
-        let mut adc = Adc::init(0, 1_000_000);
+        let mut adc = test_adc();
         let val = adc.read_channel(0).unwrap();
         assert!(val <= 1023, "ADC value {val} exceeds 10-bit max");
     }
@@ -211,42 +228,42 @@ mod tests {
 
     #[test]
     fn read_channels_empty_slice() {
-        let mut adc = Adc::init(0, 1_000_000);
+        let mut adc = test_adc();
         let result = adc.read_channels(&[]).unwrap();
         assert_eq!(result.len(), 0);
     }
 
     #[test]
     fn read_channels_single() {
-        let mut adc = Adc::init(0, 1_000_000);
+        let mut adc = test_adc();
         let result = adc.read_channels(&[0]).unwrap();
         assert_eq!(result.len(), 1);
     }
 
     #[test]
     fn read_channels_three() {
-        let mut adc = Adc::init(0, 1_000_000);
+        let mut adc = test_adc();
         let result = adc.read_channels(&[0, 1, 2]).unwrap();
         assert_eq!(result.len(), 3);
     }
 
     #[test]
     fn read_channels_all_eight() {
-        let mut adc = Adc::init(0, 1_000_000);
+        let mut adc = test_adc();
         let result = adc.read_channels(&[0, 1, 2, 3, 4, 5, 6, 7]).unwrap();
         assert_eq!(result.len(), 8);
     }
 
     #[test]
     fn read_channels_repeated() {
-        let mut adc = Adc::init(0, 1_000_000);
+        let mut adc = test_adc();
         let result = adc.read_channels(&[0, 0, 0]).unwrap();
         assert_eq!(result.len(), 3);
     }
 
     #[test]
     fn read_channels_propagates_error() {
-        let mut adc = Adc::init(0, 1_000_000);
+        let mut adc = test_adc();
         assert!(adc.read_channels(&[0, 8]).is_err());
     }
 
@@ -271,10 +288,7 @@ mod tests {
 
     #[cfg(feature = "pi")]
     fn make_mock_adc(mock_spi: MockSpi) -> Adc<MockSpi> {
-        Adc {
-            spi: mock_spi,
-            cs_pin: None,
-        }
+        Adc { spi: mock_spi }
     }
 
     #[cfg(feature = "pi")]
@@ -285,6 +299,23 @@ mod tests {
             should_fail: true,
         });
         assert!(adc.read_channel(0).is_err());
+    }
+
+    #[cfg(feature = "pi")]
+    #[test]
+    fn spi_sends_channel_command() {
+        struct CheckingSpi;
+
+        impl SpiTransfer for CheckingSpi {
+            fn transfer(&mut self, rx: &mut [u8], tx: &[u8]) -> Result<()> {
+                assert_eq!(tx, &[0x01, 0xB0, 0x00]); // Single-ended channel 3
+                rx.copy_from_slice(&[0x00, 0x02, 0xAB]);
+                Ok(())
+            }
+        }
+
+        let mut adc = Adc { spi: CheckingSpi };
+        assert_eq!(adc.read_channel(3).unwrap(), 0x02AB);
     }
 
     #[cfg(feature = "pi")]

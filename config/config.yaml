@@ -1,11 +1,31 @@
 # GPM Configuration
 
+definitions:
+  spi:
+    spi0:
+      bus: 0
+      pins:
+        mosi: 10
+        miso: 9
+        clock: 11
+      cs_pins: # GPIO enumeration for chip-select
+        cs0: 8
+        cs1: 7
+
+# Define more protocols as needed
+    
 # Hardware Configuration
 hardware:
+  # Protocols
+  spi:
+    - spi0
+
   # EMG Sensor Configuration
   emg:
+    pins:
+      cs: 8
+    spi: spi0
     buffer_size: 256
-    cs_pin: 8
     clock_speed: 1350000
     inner_threshold: 450.0
     outer_threshold: 450.0
@@ -13,7 +33,9 @@ hardware:
     
   # FSR Sensor Configuration
   fsr:
-    cs_pins: [7]
+    pins: 
+      cs: 7
+    spi: spi0
     at_rest_threshold: 900
     pressure_threshold: 500
     clock_speed: 1350000

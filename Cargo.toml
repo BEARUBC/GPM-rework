@@ -28,5 +28,5 @@ rand = "0.9.2"
 pi = ["dep:raestro", "dep:rppal", "dep:spidev"]
 
 [lib]
-name = "gpm"
+name = "_native"
 crate-type = ["cdylib"]

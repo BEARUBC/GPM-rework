@@ -3,8 +3,8 @@
 class Emg:
     """EMG (Electromyography) sensor interface"""
     
-    def __init__(self) -> None:
-        """Initialize the EMG sensor"""
+    def __init__(self, cs_pin: int, spi_bus: int) -> None:
+        """Initialize the EMG sensor with a required BCM CS pin and SPI bus"""
         ...
     
     def configure(self, buffer_size: int) -> None:

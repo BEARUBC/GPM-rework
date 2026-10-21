@@ -7,23 +7,32 @@ class HardwareInterface:
     """Wrapper to manage all hardware initialization and lifecycle"""
    
     def __init__(self, config: dict = None):
-        self.config = config or HARDWARE_CONFIG
+        self.config = HARDWARE_CONFIG if config is None else config
+        emg_cs_pin = self.config.get('emg_cs_pin')
+        fsr_cs_pin = self.config.get('fsr_cs_pin')
+        emg_spi = self.config.get('emg_spi')
+        fsr_spi = self.config.get('fsr_spi')
+        if emg_cs_pin is None:
+            raise ValueError('Missing required hardware.emg.cs_pin configuration')
+        if fsr_cs_pin is None:
+            raise ValueError('Missing required hardware.fsr.cs_pin configuration')
+        if emg_spi is None:
+            raise ValueError('Missing required hardware.emg.spi configuration')
+        if fsr_spi is None:
+            raise ValueError('Missing required hardware.fsr.spi configuration')
         self.maestro = Maestro()
-        self.emg = Emg()
+        self.emg = Emg(cs_pin=emg_cs_pin, spi_bus=emg_spi)
         self.bms = Bms()
-        self.fsr = Fsr()
+        self.fsr = Fsr(cs_pin=fsr_cs_pin, spi_bus=fsr_spi)
        
     def initialize(self):
         """Initialize all hardware with config"""
         self.emg.configure(self.config.get('emg_buffer_size', 256))
         
-        # Configure FSR if config available
-        if 'fsr_cs_pins' in self.config:
-            self.fsr.configure(
-                self.config['fsr_cs_pins'],
-                self.config.get('fsr_at_rest_threshold', 900),
-                self.config.get('fsr_pressure_threshold', 500)
-            )
+        self.fsr.configure(
+            self.config.get('fsr_at_rest_threshold', 900),
+            self.config.get('fsr_pressure_threshold', 500)
+        )
         
         # Calibrate EMG if thresholds available
         if 'emg_inner_threshold' in self.config and 'emg_outer_threshold' in self.config:

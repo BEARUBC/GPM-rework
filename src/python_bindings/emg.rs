@@ -6,7 +6,6 @@ use pyo3::prelude::*;
 
 // Temporary: using local hardware module
 use crate::hardware::emg::Emg as RustEmg;
-use crate::hardware::Resource;
 
 /// Python-exposed EMG sensor interface
 #[pyclass(name = "Emg")]
@@ -18,8 +17,13 @@ pub struct Emg {
 impl Emg {
     /// Initialize the EMG sensor
     #[new]
-    pub fn new() -> PyResult<Self> {
-        let inner = RustEmg::init();
+    #[pyo3(signature = (cs_pin, spi_bus))]
+    pub fn new(cs_pin: u8, spi_bus: u8) -> PyResult<Self> {
+        let inner = RustEmg::init_with_cs(cs_pin, spi_bus).map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!(
+                "EMG initialization failed: {e:#}"
+            ))
+        })?;
         Ok(Emg { inner })
     }
 
