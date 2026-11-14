@@ -7,17 +7,50 @@ from pathlib import Path
 CONFIG_DIR = Path(__file__).parent
 CONFIG_FILE = CONFIG_DIR / "config.yaml"
 
+# Board profile: GPM_CONFIG=<name> overlays config/config.<name>.yaml on top of
+# config.yaml (e.g. GPM_CONFIG=pi0 -> config.pi0.yaml). Unset = base config only.
+CONFIG_PROFILE = os.environ.get('GPM_CONFIG', '').strip() or None
+
+
+def _deep_merge(base, override):
+    """Recursively merge override into base; override values win."""
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def _read_yaml(path):
+    with open(path, 'r') as f:
+        return yaml.safe_load(f) or {}
+
+
 # Load configuration
-def load_config():
-    """Load configuration from YAML file"""
+def load_config(profile=CONFIG_PROFILE):
+    """Load config.yaml, then overlay config.<profile>.yaml if a profile is set"""
     if CONFIG_FILE.exists():
-        with open(CONFIG_FILE, 'r') as f:
-            return yaml.safe_load(f)
+        config = _read_yaml(CONFIG_FILE)
     else:
         print(f"Warning: Config file not found at {CONFIG_FILE}, using defaults")
-        return {}
+        config = {}
+
+    if profile:
+        profile_file = CONFIG_DIR / f"config.{profile}.yaml"
+        if not profile_file.exists():
+            raise FileNotFoundError(
+                f"GPM_CONFIG={profile} but profile file not found: {profile_file}"
+            )
+        config = _deep_merge(config, _read_yaml(profile_file))
+
+    return config
 
 CONFIG = load_config()
+
+# Board the active config targets (informational, shown in logs)
+BOARD = CONFIG.get('hardware', {}).get('board', 'raspberry-pi')
 
 # Hardware Configuration
 HARDWARE_CONFIG = {

@@ -16,6 +16,8 @@ definitions:
     
 # Hardware Configuration
 hardware:
+  board: raspberry-pi  # informational; overridden by board profiles (config.<name>.yaml)
+
   # Protocols
   spi:
     - spi0

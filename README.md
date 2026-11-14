@@ -144,6 +144,100 @@ Edit `config/config.yaml` to adjust:
 - Safety constraints (voltage, temperature, current limits)
 - Application settings (loop rate, debug mode)
 
+### Board Profiles (current Pi vs. Pi Zero 2 W)
+
+`config/config.yaml` is the base config for the current Raspberry Pi. To target a
+different board, set `GPM_CONFIG=<name>`. `config/config.<name>.yaml` is then
+deep-merged on top of the base, so a profile only needs the keys that differ.
+
+| Board | Profile file | How to select |
+|---|---|---|
+| Current Raspberry Pi | `config/config.yaml` | default (leave `GPM_CONFIG` unset) |
+| Pi Zero 2 W (temporary) | `config/config.pi0.yaml` | `GPM_CONFIG=pi0` |
+
+```bash
+# Current Pi
+python main.py
+
+# Pi Zero 2 W
+GPM_CONFIG=pi0 python main.py
+GPM_CONFIG=pi0 python main.py demo
+```
+
+If `GPM_CONFIG` names a profile with no matching file, startup fails with an error
+instead of silently using the base config. To add a board, create
+`config/config.<name>.yaml` with only the overridden keys, and set `hardware.board`
+so it's clear which profile is active.
+
+#### Pi Zero 2 W pin mapping
+
+The Zero 2 W uses the same 40-pin header and BCM numbering as the full-size Pi,
+so the pin numbers don't change; only the board setup and build target do.
+
+| Signal | BCM GPIO | Physical pin |
+|---|---|---|
+| SPI0 MOSI | 10 | 19 |
+| SPI0 MISO | 9 | 21 |
+| SPI0 SCLK | 11 | 23 |
+| EMG ADC CS (CE0) | 8 | 24 |
+| FSR ADC CS (CE1) | 7 | 26 |
+| Maestro UART TX → Maestro RX | 14 | 8 |
+| Maestro UART RX ← Maestro TX | 15 | 10 |
+| MCP3008 VDD/VREF (3.3V only) | — | 1 |
+| GND | — | 6 |
+
+Power the servos from a separate supply into the Maestro (never from the Zero's 5V
+pin), and connect all grounds together.
+
+#### Pi Zero 2 W device setup: the Maestro gets the stronger UART
+
+The Zero 2 W has two UARTs:
+
+- **PL011 (`ttyAMA0`)**: a full UART with its own stable clock.
+- **Mini-UART (`ttyS0`)**: its baud rate comes from the GPU core clock, so it can
+  drift when the clock scales or the board throttles. Drift garbles serial bytes
+  and causes missed or wrong servo commands.
+
+By default the PL011 is given to Bluetooth, and `/dev/serial0` (the port the
+Maestro driver opens on GPIO 14/15) ends up on the mini-UART. **This setup
+disables Bluetooth so the stronger PL011 UART goes to the Maestro.** Add to
+`/boot/firmware/config.txt`:
+
+```
+dtparam=spi=on
+enable_uart=1
+dtoverlay=disable-bt
+```
+
+Then:
+
+```bash
+sudo systemctl disable hciuart
+sudo raspi-config   # Interface Options → Serial Port: login shell NO, hardware port YES
+sudo reboot
+
+# Verify
+ls -l /dev/serial0          # must point to ttyAMA0, not ttyS0
+ls /dev/spidev0.*           # expect spidev0.0 and spidev0.1
+```
+
+#### Building for the Pi Zero 2 W
+
+The Zero 2 W is aarch64 with 512 MB RAM. Compiling on the device can run out of
+memory, so cross-compile from a dev machine:
+
+```bash
+rustup target add aarch64-unknown-linux-gnu
+pip install ziglang
+PI0_PYTHON=python3.11 ./build.sh release-pi0   # match the device's Python version
+scp target/wheels/gpm-*.whl <user>@<zero-host>:~
+# on the Zero, inside a venv:
+pip install ~/gpm-*.whl
+```
+
+If you'd rather build on the device, raise swap to about 1 GB first
+(`/etc/dphys-swapfile`).
+
 ## Key Features
 
 ### Direct Hardware Access

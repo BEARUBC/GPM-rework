@@ -1,0 +1,48 @@
+# GPM board profile: Raspberry Pi Zero 2 W (TEMPORARY)
+#
+# Activate with:  GPM_CONFIG=pi0 python main.py
+# This file is deep-merged over config.yaml; only keys listed here are overridden.
+#
+# The Zero 2 W has the same 40-pin header / BCM numbering as the full-size Pi,
+# so SPI0 and CS pins are unchanged. They are restated here so the Zero wiring
+# is explicit in one place.
+#
+# Required device setup (/boot/firmware/config.txt) — see README "Board profiles":
+#   dtparam=spi=on
+#   enable_uart=1
+#   dtoverlay=disable-bt    # gives the stable PL011 UART (ttyAMA0) to the Maestro
+
+definitions:
+  spi:
+    spi0:
+      bus: 0
+      pins:
+        mosi: 10   # physical pin 19
+        miso: 9    # physical pin 21
+        clock: 11  # physical pin 23
+      cs_pins:
+        cs0: 8     # physical pin 24 (EMG ADC)
+        cs1: 7     # physical pin 26 (FSR ADC)
+
+hardware:
+  board: pi-zero-2w
+
+  emg:
+    pins:
+      cs: 8
+    spi: spi0
+
+  fsr:
+    pins:
+      cs: 7
+    spi: spi0
+
+  # Maestro uses /dev/serial0 -> GPIO 14 (TX, pin 8) / GPIO 15 (RX, pin 10).
+  # With dtoverlay=disable-bt, serial0 is the PL011 (ttyAMA0), not the mini-UART.
+  maestro:
+    baudrate: 115200
+
+# Lower these here if the Zero 2 W can't hold the base rates
+# (measure the real loop period on the device first).
+# application:
+#   control_loop_rate: 100
